@@ -62,6 +62,13 @@ public partial class App : Application
             return;
         }
 
+        if (Has("--layoutcheck"))
+        {
+            AttachConsoleForTool();
+            Shutdown(RunLayoutCheck());
+            return;
+        }
+
         // 数据目录重定向（--demo / --dir）必须在读取设置之前完成
         var scopes = new List<IDisposable>();
         string? dir = Value("--dir");
@@ -194,5 +201,100 @@ public partial class App : Application
 
         int missing = GlyphCatalog.CheckAll(Report);
         return missing == 0 ? 0 : missing < 0 ? 2 : 1;
+    }
+
+    private static readonly List<string> _layoutLog = new();
+
+    /// <summary>
+    /// 布局自检：创建主窗口并在真实排版后打印关键元素的实测尺寸。
+    /// 用来回答"内容到底需要多宽 / 哪一列被裁"，而不是靠截图猜。
+    ///
+    /// 注意：不调用 Show()（那会弹解锁框并阻塞）。用 Measure/Arrange
+    /// 在离屏状态下强制一次真实排版，拿到的 ActualWidth 同样是可靠的。
+    /// </summary>
+    private static int RunLayoutCheck()
+    {
+        void Say(string line)
+        {
+            try { Console.WriteLine(line); } catch { }
+            try { _layoutLog.Add(line); } catch { }
+        }
+
+        var window = new MainWindow();
+
+        // Window 本身在未 Show 时不会排版内容，因此直接对它的内容根排版。
+        // 客户区尺寸 = 窗口尺寸减去标题栏与边框（用 SystemParameters 估）：
+        //   标题栏约 30 DIP，左右边框各 1 DIP
+        double clientW = window.Width - 2;
+        double clientH = window.Height - 39;
+
+        if (window.Content is System.Windows.FrameworkElement root)
+        {
+            root.Measure(new System.Windows.Size(clientW, clientH));
+            root.Arrange(new System.Windows.Rect(0, 0, clientW, clientH));
+            root.UpdateLayout();
+            Say($"内容根 DesiredWidth={root.DesiredSize.Width:N1}  ActualWidth={root.ActualWidth:N1}");
+        }
+        else
+        {
+            Say("内容根未找到");
+        }
+
+        Say("=== 布局实测 ===");
+        Say($"窗口 Width={window.Width}  Height={window.Height}");
+        Say($"假设客户区 {clientW:N0} x {clientH:N0}");
+
+        if (window.FindName("EntryList") is System.Windows.FrameworkElement list)
+        {
+            Say($"EntryList ActualWidth={list.ActualWidth:N1}  DesiredWidth={list.DesiredSize.Width:N1}");
+        }
+        else
+        {
+            Say("EntryList 未找到");
+        }
+
+        var found = new List<(string Path, double W)>();
+        if (window.Content is System.Windows.DependencyObject croot) Walk(croot, "", found);
+
+        Say("");
+        Say("=== 表格 Grid 列宽实测 ===");
+        foreach (var (path, w) in found.OrderByDescending(x => x.W).Take(10))
+        {
+            Say($"  {w,9:N1}  {path}");
+        }
+
+        window.Close();
+
+        // WPF 应用可能没有可用的 stdout，结果同时落盘，确保一定拿得到
+        try
+        {
+            string outPath = Path.Combine(Path.GetTempPath(), "akm-layoutcheck.txt");
+            File.WriteAllText(outPath, string.Join(Environment.NewLine, _layoutLog));
+        }
+        catch { }
+
+        return 0;
+    }
+
+    private static void Walk(System.Windows.DependencyObject root, string path,
+                             List<(string, double)> sink)
+    {
+        if (root is System.Windows.Controls.Grid g && g.ColumnDefinitions.Count >= 4)
+        {
+            double sum = 0;
+            var widths = new List<string>();
+            foreach (var c in g.ColumnDefinitions)
+            {
+                sum += c.ActualWidth;
+                widths.Add(c.ActualWidth.ToString("N0"));
+            }
+            sink.Add(($"cols={g.ColumnDefinitions.Count} sum={sum:N0}  [{string.Join(",", widths)}]", sum));
+        }
+
+        int n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < n; i++)
+        {
+            Walk(System.Windows.Media.VisualTreeHelper.GetChild(root, i), path + "/" + i, sink);
+        }
     }
 }

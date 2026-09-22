@@ -21,7 +21,7 @@
         <conv:ExpiryBrushConverter x:Key="ExpiryText" AsText="True" />
 
         <!--
-          列宽定义：8 列固定像素，合计 1105。
+          列宽定义：8 列固定像素，合计 1000。
 
           为什么不用 * 星号 + SharedSizeGroup：
           SharedSizeGroup 的语义是"列宽 = 组内所有元素的最大 DesiredWidth"，
@@ -30,21 +30,18 @@
           固定像素 + 表头/行共用同一组常量，是 ListBox+ItemTemplate 表格最稳的做法。
 
           宽度预算：窗口 1600
-            - PadWindow 左右 32
-            - 卡片边框 2
-            - 表头左右内边距 20
-            - 垂直滚动条 16
+            - PadWindow 左右 32 - 卡片边框 2 - 表头内边距 20 - 垂直滚动条 16
             = 1530 可用
-          1105 远小于 1530，因此窗口缩到 ~1150 也不会裁列。
+          合计 1000 留足余量，因此窗口缩到约 1100 也不会裁列。
         -->
-        <GridLength x:Key="ColName">160</GridLength>
-        <GridLength x:Key="ColProvider">90</GridLength>
-        <GridLength x:Key="ColKey">200</GridLength>
-        <GridLength x:Key="ColUrl">185</GridLength>
-        <GridLength x:Key="ColModel">110</GridLength>
-        <GridLength x:Key="ColTags">110</GridLength>
-        <GridLength x:Key="ColExpiry">100</GridLength>
-        <GridLength x:Key="ColUpdated">150</GridLength>
+        <GridLength x:Key="ColName">150</GridLength>
+        <GridLength x:Key="ColProvider">85</GridLength>
+        <GridLength x:Key="ColKey">185</GridLength>
+        <GridLength x:Key="ColUrl">170</GridLength>
+        <GridLength x:Key="ColModel">105</GridLength>
+        <GridLength x:Key="ColTags">100</GridLength>
+        <GridLength x:Key="ColExpiry">95</GridLength>
+        <GridLength x:Key="ColUpdated">110</GridLength>
     </Window.Resources>
 
     <Grid Margin="{StaticResource PadWindow}">
