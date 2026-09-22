@@ -30,6 +30,8 @@ public partial class MainWindow : Window
         ThemeManager.ThemeChanged += OnThemeChanged;
 
         // 键盘快捷键
+        // Ctrl+F 走 ApplicationCommands.Find：这是 WPF 的标准查找命令，
+        // 用 CommandBinding 注册能让系统与辅助技术识别出"这里有查找功能"。
         CommandBindings.Add(new CommandBinding(
             ApplicationCommands.Find, (_, _) => FocusSearch()));
         InputBindings.Add(new KeyBinding(_vm.LockCommand, Key.L, ModifierKeys.Control));
@@ -40,24 +42,9 @@ public partial class MainWindow : Window
 
     private void FocusSearch()
     {
-        // 在可视树里找搜索框（它没有 x:Name，避免与绑定命名冲突）
-        var box = FindDescendant<TextBox>(this, tb => tb.Style == (Style)FindResource("TextBoxSearch"));
-        box?.Focus();
-        box?.SelectAll();
-    }
-
-    private static T? FindDescendant<T>(DependencyObject root, Func<T, bool> predicate)
-        where T : DependencyObject
-    {
-        int n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
-        for (int i = 0; i < n; i++)
-        {
-            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
-            if (child is T t && predicate(t)) return t;
-            var found = FindDescendant(child, predicate);
-            if (found != null) return found;
-        }
-        return null;
+        // 搜索框有 x:Name，直接聚焦即可
+        TxtSearch.Focus();
+        TxtSearch.SelectAll();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)

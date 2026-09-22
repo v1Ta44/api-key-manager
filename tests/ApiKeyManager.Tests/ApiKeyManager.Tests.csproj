@@ -1,8 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!--
+      测试项目保持 net9.0-windows：
+      无障碍与主题一致性测试需要读取 WPF 项目目录下的 XAML 文件，
+      这些断言按仓库路径定位文件，不加载 WPF 运行时本身。
+      保持 -windows 目标是为了将来加"实例化窗口"的集成测试时不用改目标框架。
+    -->
     <TargetFramework>net9.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -16,10 +21,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Core 层测试：不依赖任何 UI -->
+    <!--
+      只引用 Core。
+      Core 目标框架是 net9.0（无 -windows），这从编译期就保证了
+      业务逻辑不会悄悄依赖 UI 类型 —— Core 里出现 System.Windows
+      会直接编译失败，而不是等到运行时才炸。
+
+      原先还引用了 WinForms 工程以测试自绘控件的 AccessibleName；
+      WPF 版的无障碍测试改为解析 XAML，不再需要引用 UI 工程，
+      因此这里去掉，测试项目也不必再开 UseWindowsForms。
+    -->
     <ProjectReference Include="..\..\src\ApiKeyManager.Core\ApiKeyManager.Core.csproj" />
-    <!-- WinForms 工程：仅为 AccessibilityTests 等 UI 相关测试保留，阶段 4 删除 -->
-    <ProjectReference Include="..\..\ApiKeyManager.csproj" />
   </ItemGroup>
 
 </Project>

@@ -138,6 +138,7 @@
                         <TextBox x:Name="TxtSearch" Style="{StaticResource TextBoxSearch}"
                                  VerticalAlignment="Center"
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=150}"
+                                 AutomationProperties.Name="搜索记录"
                                  ToolTip="搜索名称 / 提供商 / 模型 / 标签 / Base URL" />
                     </StackPanel>
 
