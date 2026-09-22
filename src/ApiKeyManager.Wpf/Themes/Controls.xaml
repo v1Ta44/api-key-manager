@@ -349,10 +349,13 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ListBoxItem">
+                                <!-- 左右内边距与表头 TableHeader 的 Padding 必须一致，
+                                     否则列会错位。 -->
                                 <Border x:Name="Bd"
                                         Background="{TemplateBinding Background}"
                                         CornerRadius="{StaticResource RadiusControl}"
-                                        Margin="4,2,4,2"
+                                        Padding="16,0,4,0"
+                                        Margin="0,1,0,1"
                                         SnapsToDevicePixels="True">
                                     <ContentPresenter />
                                 </Border>
@@ -513,6 +516,63 @@
     <Style x:Key="HorizontalSep" TargetType="Rectangle">
         <Setter Property="Height" Value="{StaticResource StrokeThin}" />
         <Setter Property="Fill" Value="{DynamicResource GridLine}" />
+    </Style>
+
+    <!-- ==================================================================
+         表格：表头与单元格
+         替代 WinForms 版 DataGridView 的默认外观，
+         并让表头与数据行的字体/对齐/内边距完全一致。
+         ================================================================== -->
+
+    <Style x:Key="TableHeader" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource SurfaceAlt}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+        <Setter Property="BorderThickness" Value="{StaticResource BorderBottomOnly}" />
+        <!-- 左侧留 16 给列表卡片的视觉出血；右侧留 4 补偿滚动条 -->
+        <Setter Property="Padding" Value="16,0,4,0" />
+    </Style>
+
+    <Style x:Key="TextHeaderCell" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextDim}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="{StaticResource PadCell}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="TextCell" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
+        <Setter Property="Foreground" Value="{DynamicResource Text}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="{StaticResource PadCell}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+    </Style>
+
+    <Style x:Key="TextCellStrong" TargetType="TextBlock" BasedOn="{StaticResource TextCell}">
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <Style x:Key="TextCellDim" TargetType="TextBlock" BasedOn="{StaticResource TextCell}">
+        <Setter Property="Foreground" Value="{DynamicResource TextDim}" />
+    </Style>
+
+    <!-- API Key 列用等宽字体：l/1/I 与 O/0 可区分，人工核对时不易抄错 -->
+    <Style x:Key="TextCellMono" TargetType="TextBlock" BasedOn="{StaticResource TextCell}">
+        <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Courier New" />
+        <Setter Property="Foreground" Value="{DynamicResource TextDim}" />
+    </Style>
+
+    <!-- 空列表提示：居中、次要色、不抢视觉 -->
+    <Style x:Key="TextEmptyState" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextDim}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="MaxWidth" Value="320" />
     </Style>
 
 </ResourceDictionary>

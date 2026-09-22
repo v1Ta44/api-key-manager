@@ -28,6 +28,9 @@
     <Color x:Key="ColorDangerSoft">#3A2523</Color>
     <Color x:Key="ColorWarning">#E0A34A</Color>
     <Color x:Key="ColorWarningSoft">#3A3020</Color>
+    <!-- 到期日文本：深色底上比纯色强调再亮一档 -->
+    <Color x:Key="ColorExpiryExpiredText">#F2746C</Color>
+    <Color x:Key="ColorExpirySoonText">#EDB45E</Color>
     <Color x:Key="ColorSuccess">#4FBE86</Color>
     <Color x:Key="ColorSuccessSoft">#1F3429</Color>
 
@@ -95,6 +98,11 @@
     <SolidColorBrush x:Key="ExpirySoon" Color="{StaticResource ColorWarning}" />
     <SolidColorBrush x:Key="ExpiryValid" Color="{StaticResource ColorTextDim}" />
     <SolidColorBrush x:Key="ExpiryNone" Color="{StaticResource ColorTextDisabled}" />
+
+    <!-- 文本形态：深色底上略提亮，保证对比度 -->
+    <SolidColorBrush x:Key="ExpiryExpiredText" Color="{StaticResource ColorExpiryExpiredText}" />
+    <SolidColorBrush x:Key="ExpirySoonText" Color="{StaticResource ColorExpirySoonText}" />
+    <SolidColorBrush x:Key="ExpiryValidText" Color="{StaticResource ColorTextDim}" />
 
     <SolidColorBrush x:Key="ScrollThumb" Color="{StaticResource ColorScrollThumb}" />
     <SolidColorBrush x:Key="ScrollThumbHover" Color="{StaticResource ColorScrollThumbHover}" />

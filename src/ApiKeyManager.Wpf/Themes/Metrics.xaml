@@ -23,6 +23,8 @@
     <Thickness x:Key="PadCard">24,20,24,20</Thickness>
     <Thickness x:Key="PadDialog">20</Thickness>
     <Thickness x:Key="PadField">12,0,12,0</Thickness>
+    <!-- 表格单元格内边距：表头与数据行共用，保证列对齐后文字基线一致 -->
+    <Thickness x:Key="PadCell">0,0,10,0</Thickness>
     <Thickness x:Key="PadToolbar">0,0,0,12</Thickness>
     <Thickness x:Key="PadWindow">16,14,16,8</Thickness>
 
@@ -46,6 +48,7 @@
     <sys:Double x:Key="FontSizeTitle">15</sys:Double>
     <sys:Double x:Key="FontSizeDialogTitle">14</sys:Double>
     <sys:Double x:Key="FontSizeBody">13</sys:Double>
+    <sys:Double x:Key="FontSizeSmall">12.5</sys:Double>
     <sys:Double x:Key="FontSizeCaption">12</sys:Double>
     <sys:Double x:Key="FontSizeMono">13</sys:Double>
 
@@ -59,10 +62,19 @@
     <Thickness x:Key="BorderBottomOnly">0,0,0,1</Thickness>
 
     <!-- ============ 窗口默认尺寸 ============ -->
-    <sys:Double x:Key="WindowWidth">1180</sys:Double>
-    <sys:Double x:Key="WindowHeight">720</sys:Double>
-    <sys:Double x:Key="WindowMinWidth">980</sys:Double>
-    <sys:Double x:Key="WindowMinHeight">560</sys:Double>
+    <!--
+      窗口尺寸。
+      8 列固定像素合计 1170，加上窗口边距 / 卡片边框 / 表头内边距 / 滚动条，
+      约需 1230 才能完整显示。实测本机逻辑屏宽约 1707，
+      因此默认 1600 可完整放下全部 8 列并留有余量。
+
+      MinWidth 取 1000：固定像素列不会压缩，低于此宽度时
+      由列表的横向滚动兜底，保证内容可达且表头与行不错位。
+    -->
+    <sys:Double x:Key="WindowWidth">1600</sys:Double>
+    <sys:Double x:Key="WindowHeight">820</sys:Double>
+    <sys:Double x:Key="WindowMinWidth">1000</sys:Double>
+    <sys:Double x:Key="WindowMinHeight">600</sys:Double>
 
     <!-- ============ 动效时长 ============ -->
     <Duration x:Key="DurationFast">0:0:0.12</Duration>

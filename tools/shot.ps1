@@ -1,4 +1,4 @@
-# Capture the main window of a process to a PNG (for UI verification).
+﻿# Capture the main window of a process to a PNG (for UI verification).
 # Usage: .\tools\shot.ps1 -ExePath <path> -Out <png> [-AppArgs <string[]>] [-Delay 6] [-ClickTheme]
 param(
     [Parameter(Mandatory = $true)][string]$ExePath,
