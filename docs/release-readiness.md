@@ -1,5 +1,7 @@
 # 2.0.0 发布前检查
 
+**发布已完成**：[GitHub v2.0.0](https://github.com/v1Ta44/api-key-manager/releases/tag/v2.0.0)，2026-09-22 22:55:58（UTC+8）；非草稿、非预发布。标签对应源码提交 `37e0c2dfaa929183578f689c275e71633789912e`。两个 ZIP、SHA256SUMS.txt、release-manifest.json、RELEASE-NOTES.md 共 5 个远端附件的状态、大小和 SHA-256 均已回读核对。本地回执为 `dist/v2.0.0/github-publication-receipt.json`。剩余人工项目为用户主动豁免，状态保持未验证。
+
 检查日期：2026-09-22。下文保留候选验证过程；后续用户明确要求「跳过所有人工检查，进行发布」，并指定 `https://github.com/v1Ta44/api-key-manager.git`。据此将剩余人工门设为 `waived-by-user-not-tested`，允许发布 v2.0.0；不是补记测试通过。Git 提交、推送和该仓库的 Release 发布已获本轮授权，真实库迁移仍不在范围内。
 
 正式发行包位于 `dist/v2.0.0/`，程序二进制与通过检查的候选完全一致；仅更新随包说明和 stable 发行标记。sc ZIP SHA-256：`9F574287628E5A3781DE94A598F6B5C229C1D2F401341A9C98936941561D6641`；fd ZIP SHA-256：`0D6DC757E55F3443AA4A152855653CC68B583CDCA745490CBBBF8E033202D0C5`。GitHub 发布结果以远端 Release 状态及附件校验为准。
