@@ -3,24 +3,54 @@
 一个单文件、免安装的 Windows 小工具，用于本地集中管理各家平台的 API Key。
 所有数据用主密码加密后存放在本地 `vault.akv`，不联网、不上传。
 
+GUI 使用 **WPF**（`net9.0-windows`），业务逻辑抽成独立的纯 .NET 类库
+（**`ApiKeyManager.Core`，目标框架 `net9.0`，不含任何 UI 依赖**）。
+
 ## 一、成品
 
-| 文件 | 说明 |
-| --- | --- |
-| `dist\standalone\ApiKeyManager.exe` | **推荐**。自包含单文件（约 50 MB），双击即用，目标机器无需安装任何运行时 |
-| `dist\net-runtime\ApiKeyManager.exe` | 精简单文件（约 230 KB），需目标机器已装 .NET 9 Desktop Runtime |
+| 形态 | 体积 | 说明 |
+| --- | --- | --- |
+| 框架依赖单文件 | **0.29 MB** | 需目标机器已装 .NET 9 Desktop Runtime |
+| 自包含 | **61.9 MB** | 免安装运行时；WPF 的原生渲染组件无法并入单文件，故为 6 个文件 |
 
-均为 x64 Windows 桌面程序（WinForms，Windows 10/11）。
+均为 x64 Windows 桌面程序（Windows 10/11）。
 
-**界面效果**：`shots\light.png`（浅色）、`shots\dark.png`（深色）、`shots\dialog.png`（编辑对话框）
+```powershell
+# 框架依赖（推荐，体积可忽略）
+dotnet publish .\src\ApiKeyManager.Wpf\ApiKeyManager.Wpf.csproj -c Release -r win-x64 `
+  --self-contained false -p:PublishSingleFile=true -o .\dist\net-runtime
+
+# 自包含（免运行时）
+dotnet publish .\src\ApiKeyManager.Wpf\ApiKeyManager.Wpf.csproj -c Release -r win-x64 `
+  --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o .\dist\standalone
+
+# 两种形态一键发布 + 体积统计 + 产物自检
+.\tools\verify-publish.ps1
+```
+
+> **关于体积**：WPF **不支持 `PublishTrimmed`**，开启会直接报 `NETSDK1168`
+> （官方明确说明不支持裁剪 WPF）。因此自包含版的 61.9 MB 已是下限。
+> 若在意体积，用框架依赖版（0.29 MB）。
+>
+> **关于压缩**：`EnableCompressionInSingleFile` 只在自包含发布时可用，
+> 框架依赖版开启会得到 `NETSDK1176`。项目文件里已按条件自动设置。
+
+**界面效果**：`shots\list-light.png`（浅色）、`shots\list-dark.png`（深色）、
+`shots\30-password-dialog.png`（主密码）、`shots\32-expiry-alert.png`（到期提醒）、
+`shots\21-after-save.png`（新增后落库）
 
 ## 二、界面
 
-- 现代卡片式布局：圆角卡片、圆角按钮、Segoe MDL2 图标、程序图标（钥匙）
-- **浅色 / 深色双主题**：右上角「深色 / 浅色」一键切换，即时生效并记忆
-- 列表：斑马纹、细分隔线、行高 38、密钥列等宽字体（Consolas）
-- 输入框聚焦高亮描边、按钮悬停 / 按下反馈、状态栏倒计时胶囊
-- 快捷键：`Enter` 编辑、`Delete` 删除、`Ctrl+C` 复制 Key、双击编辑；列头点击排序
+- 卡片式布局：圆角卡片、圆角按钮、Segoe MDL2 图标、程序图标（钥匙）
+- **浅色 / 深色双主题**：右上角一键切换，**即时生效且不重建可视树**
+  （只替换 `MergedDictionaries[1]`，所有颜色走 `DynamicResource`）
+- 8 列表格：名称 / 提供商 / API Key / Base URL / 模型 / 标签 / 到期日 / 更新时间
+  - 标签渲染为彩色 chip（最多 3 个，超出显示 `…`）
+  - 到期日按语义着色：**已过期=红、14 天内=橙、正常=灰**
+  - API Key 与 Base URL 用等宽字体（Cascadia Mono → Consolas 兜底）
+  - 长文本 `CharacterEllipsis` 截断，完整值在行 ToolTip 里
+- 键盘：`Ctrl+F` 查找、`Ctrl+L` 锁定、`Ctrl+N` 新增、`Ctrl+T` 切换主题
+- 状态栏：迭代升级提示、`记录: N / M 条`、到期汇总、`自动锁定 mm:ss` 倒计时
 
 ## 三、功能
 
@@ -29,8 +59,8 @@
 - **搜索过滤**：按名称 / 提供商 / 标签 / 备注 / URL / 模型即时模糊过滤
 - **密钥掩码**：列表默认显示 `sk-1••••••••••••abcd`，可一键「显示密钥 / 隐藏密钥」
 - **一键复制**：复制 Key / 复制 Base URL；复制的内容 **30 秒后自动清除剪贴板**（可配）
-- **到期提醒**：可为每个 Key 设置到期日；列表中「到期日」列对已过期标红、14 天内到期标橙，
-  解锁时弹一次汇总提醒；勾「不设置到期提醒」即退出该机制
+- **到期提醒**：可为每个 Key 设置到期日；列表中「到期日」列语义着色，
+  解锁时弹一次主题化汇总提醒；勾「不提醒」即退出该机制
 - **自动锁定**：闲置 N 分钟（默认 5 分钟）自动回到锁定界面，可手动锁定、可关闭
 - **加密强度自动升级**：解锁成功后若发现库文件用的是偏低的 PBKDF2 迭代数，
   会先备份再用当前推荐值（600 000 次）原地重加密，并回读校验；失败不影响本次使用
@@ -74,74 +104,102 @@
 | 参数 | 作用 |
 | --- | --- |
 | `--selftest` | 无界面自检（9 项，全部 PASS 时退出码 0）。发布前冒烟用，目标机器无需 SDK |
-| `--demo` | 演示模式：临时目录生成 6 条示例数据并自动解锁（不碰真实数据） |
+| `--demo` | 演示模式：生成 6 条示例数据并自动解锁（不碰真实数据） |
+| `--dir <路径>` | 重定向数据目录。**优先于 `--demo`**，便于脚本把演示数据写到可预期的位置 |
 | `--dark` | 以深色主题启动 |
-| `--preview` | 配合 `--demo`：自动打开示例编辑对话框（界面预览） |
 | `--makeicon <路径>` | 生成程序图标 `icon.ico`（构建用） |
 | `--glyphcheck` | 校验按钮图标字形在 Segoe MDL2 中的覆盖（构建用） |
+| `--layoutcheck` | 离屏强制排版一次，把各 Grid 的实测列宽写入 `%TEMP%\akm-layoutcheck.txt`（排查布局用） |
 
-> `--demo` 会把数据目录整体重定向到 `%TEMP%\akm-demo`，并且**该重定向在整个进程存活期间有效**——
+> `--demo` 会把数据目录整体重定向，并且**该重定向在整个进程存活期间有效**——
 > `--demo --dark` 之类的组合只会改演示目录里的 `settings.json`，不会污染你真实的偏好设置。
+> 同时给了 `--dir` 时以 `--dir` 为准。
 
 ## 七、测试与开发
 
 ```powershell
-# 单元测试（需要 .NET 9 SDK）；134 项，覆盖加密往返 / 防篡改 / 迭代升级 / 到期判定 /
-# CSV 注入 / 剪贴板清理 / 目录解析 / 无障碍元数据
+# 单元测试（需要 .NET 9 SDK）；132 项，覆盖加密往返 / 防篡改 / 迭代升级 / 到期判定 /
+# CSV 注入 / 剪贴板清理 / 目录解析 / 主题键一致性 / 无障碍元数据
 dotnet test .\ApiKeyManager.sln
 
 # 发布前冒烟（不需要 SDK，对已构建的 exe 直接跑）
-.\bin\Release\net9.0-windows\ApiKeyManager.exe --selftest
+.\src\ApiKeyManager.Wpf\bin\Debug\net9.0-windows\ApiKeyManager.exe --selftest
+
+# GUI 实机验证（自动解锁 → 关掉提醒 → 截浅色/深色两张图）
+.\tools\ui-verify.ps1 -ExePath <exe> -OutDir .\shots
 ```
 
-## 八、重新构建
+## 八、源码结构
 
-需要 .NET 9 SDK：
+```
+src\ApiKeyManager.Core\        纯 .NET 类库，net9.0，零 UI 依赖
+  Vault.cs                     数据模型、AES-GCM 加密存储、路径解析、密钥掩码
+  EntryRepository.cs           记录集合与落盘、导入合并、覆盖前自动备份
+  EntrySearch.cs               列表模糊搜索
+  ClipboardGuard.cs            剪贴板定时清理（读/清通过委托注入，保持 UI 无关）
+  CsvExporter.cs               明文 CSV 导出（公式注入防护）
+  IterationPolicy.cs           PBKDF2 迭代策略（推荐值 / 升级阈值 / 可接受区间）
+  ExpiryPolicy.cs              到期判定（已过期 / 即将到期 / 无期限）与提醒汇总
 
-```powershell
-# 自包含（推荐，免运行时）
-dotnet publish .\ApiKeyManager.csproj -c Release -r win-x64 --self-contained true `
-  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
-  -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
-  -o .\dist\standalone
+src\ApiKeyManager.Wpf\         WPF 外壳，net9.0-windows
+  App.xaml.cs                  入口与命令行分流
+  Themes\Metrics.xaml          尺寸令牌（间距 / 圆角 / 字号 / 行高）
+  Themes\Light.xaml            浅色调色板
+  Themes\Dark.xaml             深色调色板
+  Themes\Controls.xaml         控件样式（按钮 / 输入框 / 卡片 / chip / 表头 / 单元格）
+  Themes\ThemeManager.cs       主题切换（只换字典，不重建可视树）
+  ViewModels\                  MVVM：ViewModelBase / RelayCommand / EntryViewModel / MainViewModel
+  Services\                    IDialogService 接缝 + WPF 实现、自动锁定监听、剪贴板服务
+  Views\                       MainWindow 与 4 个对话框（密码 / 编辑 / 导入方式 / 消息框）
+  Converters\Converters.cs     到期色 / 布尔取反 / 可见性转换器
+  GlyphCatalog.cs              字形覆盖自检
 
-# 精简版（需 .NET 9 Desktop Runtime）
-dotnet publish .\ApiKeyManager.csproj -c Release -r win-x64 --self-contained false `
-  -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
-  -o .\dist\net-runtime
+tests\ApiKeyManager.Tests\     xUnit 测试工程（只引用 Core）
+tools\                         截图与实机验证脚本
 ```
 
-首次构建后如需更换程序图标：`ApiKeyManager.exe --makeicon icon.ico`，再重新构建（csproj 已配置 `ApplicationIcon`）。
+### 架构要点
 
-## 九、源码结构
+- **Core 目标框架是 `net9.0`（不是 `net9.0-windows`）**，这不是随意的选择：
+  编译器会**直接拒绝**任何 `System.Windows` / `System.Windows.Forms` 引用。
+  "业务逻辑不依赖 UI"因此从约定升级为编译期保证。
+- **主题切换不重建可视树**：所有颜色都用 `DynamicResource`，
+  切换时只替换 `MergedDictionaries[1]`，界面元素保持不变（无闪烁、无状态丢失）。
+- **`Light.xaml` 与 `Dark.xaml` 的键必须完全一致**：缺键不会报错，只会静默失去样式。
+  这条由 `ThemeParityTests` 强制校验（本轮就靠它抓出过 `ColorExpiry*Text` 缺失）。
+- **`IDialogService` 是唯一的平台接缝**：`MainViewModel` 不出现任何 WPF 类型，因此可单测。
 
-| 文件 | 内容 |
-| --- | --- |
-| `Program.cs` | 入口（GUI / 自检 / 图标 / 字形校验 / 演示模式分流） |
-| `Vault.cs` | 数据模型、AES-GCM 加密存储、设置与路径解析、密钥掩码 |
-| `EntryRepository.cs` | 记录集合与落盘、导入合并、覆盖前自动备份 |
-| `EntrySearch.cs` | 列表模糊搜索（跨名称/提供商/标签/备注/URL/模型） |
-| `ClipboardGuard.cs` | 剪贴板定时清理（不误删他人复制的内容） |
-| `CsvExporter.cs` | 明文 CSV 导出（含公式注入防护） |
-| `Theme.cs` | 主题调色板（浅色/深色）与自绘控件（圆角按钮、卡片、输入框、徽标、胶囊） |
-| `MainForm.cs` | 主界面：列表、搜索、增删改查、复制、导入导出、自动锁定、主题切换 |
-| `Forms.cs` | 口令输入框、修改主密码、记录编辑对话框（卡片式） |
-| `IconFactory.cs` | 图标生成（ICO 打包）与 TTF cmap 字形校验 |
-| `IterationPolicy.cs` | PBKDF2 迭代次数策略（当前推荐值 / 升级阈值 / 可接受区间） |
-| `ExpiryPolicy.cs` | 密钥到期判定（已过期 / 即将到期 / 无期限）与提醒汇总 |
-| `Demo.cs` | 演示模式示例数据与目录隔离 |
-| `SelfTest.cs` | 无界面自检（发布前冒烟） |
-| `tests\ApiKeyManager.Tests\` | xUnit 单元测试工程 |
+## 九、工程注意事项
 
-## 十、安全与工程注意事项
-
-- **`vault.akv` / `*.akvbak` / `dist\` 已被 `.gitignore` 排除**，请勿强制加入版本库；即使当前是空库也不应入库。
+- **`vault.akv` / `*.akvbak` / `dist\` / `publish-test\` 已被 `.gitignore` 排除**，
+  请勿强制加入版本库；即使当前是空库也不应入库。
 - 导入「替换」模式是破坏性操作，程序会**先自动把当前库复制为 `vault.akv.<时间戳>.bak`** 再覆盖，出错可回滚。
 - 导出加密备份时，`settings.json` 里的界面偏好会一并加密写入备份文件，换机导入即可恢复。
 - 导出明文 CSV 时会对 `=`、`+`、`-`、`@`、Tab、CR 开头的字段做转义，避免在 Excel 中被当作公式执行。
-- `--demo` 的数据目录重定向在进程生命周期内有效且可通过作用域还原，不会与真实数据互相污染。
-- **无障碍**：所有自绘控件都显式声明 `AccessibleRole`；可交互控件（含图标按钮、日期选择器、
-  搜索框、自动锁定输入框）均提供 `AccessibleName`；`FieldBox` 把字段标签与占位提示
-  同步到内部 `TextBox` 的 `AccessibleName` / `AccessibleDescription`（密码框标注为"机密输入"）；
-  纯装饰元素（徽标、卡片）声明为 `AccessibleRole.None` 且不接收焦点。
-  这些不变量由 `AccessibilityTests` 强制校验。
+- **表格列宽用固定像素**，不用 `*` + `SharedSizeGroup`：
+  `SharedSizeGroup` 的语义是"列宽 = 组内最大 DesiredWidth"，会覆盖按比例分配，
+  实测把列撑到 1500+ DIP 导致右侧三列跑到窗口外。8 列合计 1000，窗口 1600 有充足余量。
+- **对话框不要用 `SizeToContent`**：它会以"无限宽"测量内容，
+  内层 `Grid` 的 `*` 列因此永不收缩，内容会横向溢出被裁。
+- **`StackPanel` 以无限宽测量子项**：垂直 `StackPanel` 里放带 `*` 列的 `Grid`，
+  该列会展开到内容自然宽度。需要约束宽度时用 `Grid` 的 `Auto` 行代替。
+- **`MessageBox` 已全部替换为 `MessageDialog`**：前者是 Win32 对话框，用系统配色，
+  不跟随应用主题，深色模式下会弹出一个刺眼的亮色窗口。
+
+### 无障碍
+
+- 自绘 / 纯图标控件（无 `Content` 文字）显式声明 `AutomationProperties.Name`
+- 列表与搜索框提供无障碍名称，读屏软件可报出用途
+- 查找走 `ApplicationCommands.Find` 标准命令，辅助技术能识别出"本窗口提供查找功能"
+- 可交互控件不被移出 Tab 顺序
+- 以上不变量由 `AccessibilityTests` 解析 XAML 强制校验
+  （比实例化控件更稳：不需要 STA 线程、不启动 `Application`、不受资源字典加载顺序影响）
+
+### 截图工具
+
+`tools\shot-helper.ps1` 用 `DWMWA_EXTENDED_FRAME_BOUNDS` 取窗口的**物理**矩形。
+
+这一步很关键：在高 DPI 显示器上 `GetWindowRect` 返回的是 **DPI 虚拟化**坐标。
+实测 `Width=520` 的窗口在 146% 缩放下实际渲染 **762 px** 宽，
+但 `GetWindowRect` 仍报 520 —— 按它截图会裁掉右侧，让完全正确的布局看起来像被裁了。
+（该窗口的实测数据：virtual 520×540 / physical 762×801。）

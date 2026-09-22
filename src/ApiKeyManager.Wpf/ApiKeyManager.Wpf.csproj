@@ -39,15 +39,17 @@
 
       两种形态都放在 publish-profiles 里，用 -p:PublishProfile=<名字> 选择。
     -->
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
-    <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
-    <PublishSingleFile Condition="'$(PublishSingleFile)' == ''">true</PublishSingleFile>
-    <DebugType>none</DebugType>
     <!--
-      压缩只在自包含发布时可用：框架依赖的单文件若开启会得到
-      NETSDK1176（"仅在发布独立应用程序时才支持在单个文件捆绑包中进行压缩"）。
-      框架依赖版本来就只有 0.29 MB，压缩也没有意义。
+      发布默认值。
+      注意这些都只在 Publish 时生效（用 '$(PublishProfile)' 或显式传参覆盖）：
+      如果直接在 PropertyGroup 里设 RuntimeIdentifier，普通 build 的输出
+      也会多出一层 win-x64 子目录，破坏 bin\Debug\net9.0-windows\ 这个惯例路径，
+      让所有按惯例路径写死的脚本和文档失效。
+      因此这里不设 RuntimeIdentifier，由发布命令显式指定 -r win-x64。
     -->
+    <DebugType>none</DebugType>
+    <PublishSingleFile Condition="'$(PublishSingleFile)' == ''">true</PublishSingleFile>
+    <!-- 压缩只支持自包含发布；框架依赖版开启会得到 NETSDK1176 -->
     <EnableCompressionInSingleFile Condition="'$(SelfContained)' == 'true'">true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
