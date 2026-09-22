@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ApiKeyManager</RootNamespace>
+    <AssemblyName>ApiKeyManager</AssemblyName>
+    <Product>API Key 管理器</Product>
+    <AssemblyTitle>API Key 管理器</AssemblyTitle>
+    <Description>本地加密的 API Key 管理小工具</Description>
+    <Company>Local</Company>
+    <Version>1.0.0</Version>
+    <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
+    <ApplicationIcon Condition="Exists('icon.ico')">icon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- 测试工程位于 tests\ 下，不要被主工程的默认通配符卷进来 -->
+  <ItemGroup>
+    <Compile Remove="tests\**" />
+    <None Remove="tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ApiKeyManager.Tests" />
+  </ItemGroup>
+
+</Project>
