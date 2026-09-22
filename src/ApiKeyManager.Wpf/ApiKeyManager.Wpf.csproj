@@ -21,6 +21,34 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
     <StartupObject>ApiKeyManager.Wpf.App</StartupObject>
+
+    <!--
+      发布设置。两种形态实测结果（Release / win-x64 / 单文件）：
+
+        框架依赖 (SelfContained=false)  0.29 MB
+          需要目标机安装 .NET 9 Desktop Runtime。
+          体积和原 WinForms 版相当，作为默认发布形态。
+
+        自包含   (SelfContained=true)  61.9 MB
+          免安装运行时，但 WPF 的原生渲染组件
+          （D3DCompiler_47_cor3 / wpfgfx_cor3 / PresentationNative_cor3 / PenImc_cor3）
+          无法并入单文件，所以成品是 exe + 4 个 DLL。
+
+      注意：WPF 不支持 PublishTrimmed，开启会得到
+      NETSDK1168（官方明确说明不支持裁剪 WPF），因此这里的 61.9 MB 已是下限。
+
+      两种形态都放在 publish-profiles 里，用 -p:PublishProfile=<名字> 选择。
+    -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+    <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
+    <PublishSingleFile Condition="'$(PublishSingleFile)' == ''">true</PublishSingleFile>
+    <DebugType>none</DebugType>
+    <!--
+      压缩只在自包含发布时可用：框架依赖的单文件若开启会得到
+      NETSDK1176（"仅在发布独立应用程序时才支持在单个文件捆绑包中进行压缩"）。
+      框架依赖版本来就只有 0.29 MB，压缩也没有意义。
+    -->
+    <EnableCompressionInSingleFile Condition="'$(SelfContained)' == 'true'">true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
   <ItemGroup>

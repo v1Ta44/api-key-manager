@@ -492,3 +492,5 @@ $RECYCLE.BIN/
 bin/
 obj/
 dist/
+
+publish-test/
