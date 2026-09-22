@@ -189,4 +189,95 @@ public sealed class AccessibilityTests
             Assert.True(ex == null, $"{file} 不是合法 XML：{ex?.Message}");
         }
     }
+
+    // ================= 对话框尺寸不变量 =================
+
+    /// <summary>
+    /// 对话框不能写死 Height。
+    ///
+    /// 写死高度在字段增删或文案变长后会把底部按钮挤出窗口底边，
+    /// 表现是「确定」只露出一截 —— 用户点不到，弹窗等于卡死。
+    /// 正确做法是 SizeToContent="Height" 由内容决定高度。
+    /// </summary>
+    [Fact]
+    public void DialogsDoNotHardcodeHeight()
+    {
+        var offenders = new List<string>();
+
+        foreach (var (file, text) in ViewXamls())
+        {
+            // 只在 Window 根标签的属性区里找 Height="数字"
+            var rootTag = Regex.Match(text, @"<Window\b[^>]*>", RegexOptions.Singleline);
+            if (!rootTag.Success) continue;
+
+            var hardcoded = Regex.Match(rootTag.Value, @"(?<![\w.])Height\s*=\s*""[\d.]+""");
+            if (hardcoded.Success)
+                offenders.Add($"{file}: {hardcoded.Value}");
+        }
+
+        Assert.True(offenders.Count == 0,
+            "以下对话框写死了高度，内容变高时会裁掉底部按钮：" +
+            "\n  " + string.Join("\n  ", offenders) +
+            "\n请改用 SizeToContent=\"Height\"。");
+    }
+
+    /// <summary>
+    /// 按钮不能被包在 ScrollViewer 里。
+    ///
+    /// 若 ScrollViewer 包住含按钮的整块内容，内容一超高按钮就跟着滚出
+    /// 可视区，用户无法确认。正确结构是"可滚动内容 + 固定底部按钮"。
+    /// </summary>
+    [Fact]
+    public void DialogButtonsAreNotInsideScrollViewer()
+    {
+        var offenders = new List<string>();
+
+        foreach (var (file, text) in ViewXamls())
+        {
+            var sv = Regex.Match(text, @"<ScrollViewer\b[^>]*>(?<inner>[\s\S]*?)</ScrollViewer>",
+                RegexOptions.Singleline);
+            if (!sv.Success) continue;
+
+            // 在 ScrollViewer 内部找 IsDefault / IsCancel 按钮 ——
+            // 这两个标记出现在对话框的主按钮上
+            var inner = sv.Groups["inner"].Value;
+            if (Regex.IsMatch(inner, @"<Button\b[^>]*IsDefault\s*=\s*""True""") ||
+                Regex.IsMatch(inner, @"<Button\b[^>]*IsCancel\s*=\s*""True"""))
+            {
+                offenders.Add(file);
+            }
+        }
+
+        Assert.True(offenders.Count == 0,
+            "以下对话框把主按钮放在了 ScrollViewer 内部，内容超高时按钮会被滚走：" +
+            "\n  " + string.Join("\n  ", offenders) +
+            "\n请把按钮移到 ScrollViewer 外并固定在底部。");
+    }
+
+    /// <summary>
+    /// 对话框根元素不能是 StackPanel。
+    ///
+    /// 垂直 StackPanel 以"无限宽"测量子项，内层 Grid 的 * 列会展开到
+    /// 内容自然宽度而不收缩，导致内容横向溢出。根元素应为 Grid 或 Border。
+    /// </summary>
+    [Fact]
+    public void DialogRootIsNotStackPanel()
+    {
+        var offenders = new List<string>();
+
+        foreach (var (file, text) in ViewXamls())
+        {
+            // 取 Window 标签之后的第一个元素开始标签
+            var rootTag = Regex.Match(text, @"<Window\b[^>]*>\s*(?<first><\w+)", RegexOptions.Singleline);
+            if (!rootTag.Success) continue;
+
+            if (rootTag.Groups["first"].Value.Contains("StackPanel"))
+                offenders.Add(file);
+        }
+
+        Assert.True(offenders.Count == 0,
+            "以下对话框以 StackPanel 为根元素，内容会被无限宽测量而横向溢出：" +
+            "\n  " + string.Join("\n  ", offenders) +
+            "\n请改用 Grid。");
+    }
 }

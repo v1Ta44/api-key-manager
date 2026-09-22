@@ -70,6 +70,13 @@ public partial class MessageDialog : Window
 
     // ---------------- 静态入口 ----------------
 
+    /// <summary>
+    /// 供 --dialogcheck 自检使用：构造实例但不显示，
+    /// 以便离屏排版后验证按钮是否被裁。
+    /// </summary>
+    internal static MessageDialog CreateForInspection(MessageKind kind, string title, string message) =>
+        new(kind, title, message, confirm: false);
+
     public static void Show(Window owner, MessageKind kind, string title, string message)
     {
         var dlg = new MessageDialog(kind, title, message, confirm: false) { Owner = owner };

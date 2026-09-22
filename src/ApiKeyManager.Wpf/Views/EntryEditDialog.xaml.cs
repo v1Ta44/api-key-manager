@@ -155,6 +155,13 @@ public partial class EntryEditDialog : Window
         TxtError.Visibility = Visibility.Visible;
     }
 
+    /// <summary>
+    /// 供 --dialogcheck 自检使用：构造实例但不显示，
+    /// 以便离屏排版后验证按钮是否被裁。
+    /// </summary>
+    internal static EntryEditDialog CreateForInspection(ApiEntry entry, bool isNew) =>
+        new(entry, isNew);
+
     /// <summary>打开编辑对话框。返回 true 表示已保存（entry 已被就地修改）。</summary>
     public static bool Edit(ApiEntry entry, bool isNew)
     {

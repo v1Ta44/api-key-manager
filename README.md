@@ -110,6 +110,7 @@ dotnet publish .\src\ApiKeyManager.Wpf\ApiKeyManager.Wpf.csproj -c Release -r wi
 | `--makeicon <路径>` | 生成程序图标 `icon.ico`（构建用） |
 | `--glyphcheck` | 校验按钮图标字形在 Segoe MDL2 中的覆盖（构建用） |
 | `--layoutcheck` | 离屏强制排版一次，把各 Grid 的实测列宽写入 `%TEMP%\akm-layoutcheck.txt`（排查布局用） |
+| `--dialogcheck` | 对 8 种对话框模式逐一离屏排版，断言所有按钮都完整落在窗口内（自检按钮被裁） |
 
 > `--demo` 会把数据目录整体重定向，并且**该重定向在整个进程存活期间有效**——
 > `--demo --dark` 之类的组合只会改演示目录里的 `settings.json`，不会污染你真实的偏好设置。
@@ -118,8 +119,8 @@ dotnet publish .\src\ApiKeyManager.Wpf\ApiKeyManager.Wpf.csproj -c Release -r wi
 ## 七、测试与开发
 
 ```powershell
-# 单元测试（需要 .NET 9 SDK）；132 项，覆盖加密往返 / 防篡改 / 迭代升级 / 到期判定 /
-# CSV 注入 / 剪贴板清理 / 目录解析 / 主题键一致性 / 无障碍元数据
+# 单元测试（需要 .NET 9 SDK）；135 项，覆盖加密往返 / 防篡改 / 迭代升级 / 到期判定 /
+# CSV 注入 / 剪贴板清理 / 目录解析 / 主题键一致性 / 无障碍元数据 / 对话框尺寸不变量
 dotnet test .\ApiKeyManager.sln
 
 # 发布前冒烟（不需要 SDK，对已构建的 exe 直接跑）
@@ -179,8 +180,13 @@ tools\                         截图与实机验证脚本
 - **表格列宽用固定像素**，不用 `*` + `SharedSizeGroup`：
   `SharedSizeGroup` 的语义是"列宽 = 组内最大 DesiredWidth"，会覆盖按比例分配，
   实测把列撑到 1500+ DIP 导致右侧三列跑到窗口外。8 列合计 1000，窗口 1600 有充足余量。
-- **对话框不要用 `SizeToContent`**：它会以"无限宽"测量内容，
-  内层 `Grid` 的 `*` 列因此永不收缩，内容会横向溢出被裁。
+- **对话框高度不要写死，用 `SizeToContent="Height"` 由内容决定**：
+  写死高度在字段增删或文案变长后会裁掉底部按钮（曾出现「确定」只露一截、
+  用户点不到）。宽度仍由 `Width` 硬约束，`*` 列会正常收缩。
+- **主按钮必须放在 `ScrollViewer` 外面**：若 `ScrollViewer` 包住含按钮的整块内容，
+  内容超高时按钮会跟着滚出可视区。正确结构是"可滚动字段 + 固定底部按钮"。
+- **对话框根元素用 `Grid` 而非 `StackPanel`**：垂直 `StackPanel` 以无限宽测量子项，
+  内层 `Grid` 的 `*` 列会撑到内容自然宽度而不收缩。
 - **`StackPanel` 以无限宽测量子项**：垂直 `StackPanel` 里放带 `*` 列的 `Grid`，
   该列会展开到内容自然宽度。需要约束宽度时用 `Grid` 的 `Auto` 行代替。
 - **`MessageBox` 已全部替换为 `MessageDialog`**：前者是 Win32 对话框，用系统配色，

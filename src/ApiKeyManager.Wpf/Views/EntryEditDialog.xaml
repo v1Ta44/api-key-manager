@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="编辑 API Key"
         Width="640"
-        Height="700"
+        SizeToContent="Height"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource Back}"
@@ -16,29 +16,29 @@
       加一个字段要重算所有后续 Y 坐标并改 ClientSize。
       这里用 Grid 的 Auto 行：加字段只需插入一行定义。
 
-      宽度 640 的构成：Card Margin 16*2 = 32，Card Padding 24*2 = 48，
-      标签列 76 + 12 间距 = 88，余下约 470 给输入控件。
-
-      为什么不用 SizeToContent="Height"：
-      设了 SizeToContent 后 WPF 会以"无限宽"做测量，Grid 的 * 列
-      会被撑到内容的自然宽度而永不收缩，结果是内容比窗口宽、
-      右侧被裁掉（实测固定宽 580/640 都裁，就是这个原因）。
-      改为固定高度 + Grid 的 Auto 行自适应，宽度才真正成为约束。
+      布局要点：
+      1. 高度用 SizeToContent="Height" 由内容决定，不写死。
+         写死高度在字段增删后会裁掉底部按钮。
+      2. 字段表放在 ScrollViewer 里，按钮放在它**外面**并固定在底部 ——
+         否则内容一高，按钮会跟着滚出可视区，弹窗等于卡死。
+      3. 根元素是 Grid 而非 StackPanel：垂直 StackPanel 以"无限宽"
+         测量子项，内层 Grid 的 * 列会撑到内容自然宽度而不收缩。
     -->
     <Border Style="{StaticResource Card}" Margin="16">
-        <!--
-          MaxWidth 是关键：WPF 窗口会取内容的 DesiredWidth 作为硬性下限，
-          内容里任何一个长文本都会把窗口撑宽（表现为 Width 设了也不生效、
-          右侧被裁）。给根内容一个 MaxWidth，就把它钉在窗口内。
-        -->
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
+
+            <!-- ============ 可滚动区：标题 + 字段表 ============ -->
+            <ScrollViewer Grid.Row="0"
+                          MaxHeight="560"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
             <!-- 标题 -->
             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
                 <Border x:Name="Badge" Style="{StaticResource GlyphBadge}" Margin="0,0,12,0">
@@ -148,17 +148,19 @@
                 <TextBox x:Name="TxtNotes" Grid.Row="7" Grid.Column="1"
                          Style="{StaticResource TextBoxMultiline}" />
             </Grid>
+                </StackPanel>
+            </ScrollViewer>
 
-            <!-- 元信息 -->
-            <TextBlock Grid.Row="2" x:Name="TxtMeta" Style="{StaticResource TextCaption}" Margin="0,12,0,0" />
+            <!-- ============ 元信息（固定，不随字段滚动） ============ -->
+            <TextBlock Grid.Row="1" x:Name="TxtMeta" Style="{StaticResource TextCaption}" Margin="0,12,0,0" />
 
-            <!-- 校验提示 -->
-            <TextBlock Grid.Row="3" x:Name="TxtError" Style="{StaticResource TextCaption}"
+            <!-- ============ 校验提示（固定） ============ -->
+            <TextBlock Grid.Row="2" x:Name="TxtError" Style="{StaticResource TextCaption}"
                        Foreground="{DynamicResource Danger}"
                        TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed" />
 
-            <!-- 按钮 -->
-            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <!-- ============ 按钮（固定底部，永远不会被滚走） ============ -->
+            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
                 <Button x:Name="BtnCancel" Style="{StaticResource ButtonSubtle}"
                         Content="取消" Width="88" Margin="0,0,8,0" IsCancel="True" />
                 <Button x:Name="BtnSave" Style="{StaticResource ButtonPrimary}"

@@ -85,7 +85,6 @@ public partial class PasswordDialog : Window
 
         BtnOk.Click += (_, _) => OnOk();
         BtnCancel.Click += (_, _) => { Result = null; DialogResult = false; };
-
         Loaded += (_, _) =>
         {
             Pwd1.Focus();
@@ -148,6 +147,14 @@ public partial class PasswordDialog : Window
     private static Window? OwnerWindow => Application.Current?.Windows.Count > 0
         ? Application.Current.MainWindow
         : null;
+
+    /// <summary>
+    /// 供 --dialogcheck 自检使用：构造指定模式的实例但不显示，
+    /// 以便离屏排版后验证按钮是否被裁。
+    /// </summary>
+    internal static PasswordDialog CreateForInspection(
+        PasswordDialogMode mode, string title = "自检", string prompt = "自检提示", int minLength = 8) =>
+        new(mode, title, prompt, null, minLength, null);
 
     /// <summary>询问一次密码。取消返回 null。</summary>
     public static string? Ask(string title, string prompt, string? prefill = null)

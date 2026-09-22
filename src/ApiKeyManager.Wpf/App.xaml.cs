@@ -69,6 +69,13 @@ public partial class App : Application
             return;
         }
 
+        if (Has("--dialogcheck"))
+        {
+            AttachConsoleForTool();
+            Shutdown(RunDialogCheck());
+            return;
+        }
+
         // 数据目录重定向（--demo / --dir）必须在读取设置之前完成。
         // --dir 优先：显式指定的目录应当胜出，否则自动化脚本无法把
         // 演示数据写到自己看得见的地方（--demo 会盖掉 --dir）。
@@ -213,6 +220,146 @@ public partial class App : Application
     }
 
     private static readonly List<string> _layoutLog = new();
+
+    /// <summary>
+    /// 对话框自检：把每个对话框的每一种模式都离屏排版一次，
+    /// 断言**所有按钮都完整落在窗口可视区域内**。
+    ///
+    /// 为什么需要这个：
+    /// 对话框写死高度时，字段多的模式会把底部按钮挤出窗口底边，
+    /// 表现是「确定」只露出一截 —— 用户点不到，弹窗等于卡死。
+    /// 这种缺陷编译能过、截图之外很难发现，所以固化成一条可执行断言。
+    /// </summary>
+    private static int RunDialogCheck()
+    {
+        var log = new List<string>();
+        int failures = 0;
+
+        void Say(string line) => log.Add(line);
+
+        void Check(Window dlg, string label)
+        {
+            // Window 在未 Show 时不会排版内容，所以直接对内容根排版。
+            // 客户区宽度 = 窗口宽度 - 左右边框；高度取内容的自然高度
+            // （这正是 SizeToContent="Height" 会采用的尺寸）。
+            var root = (System.Windows.FrameworkElement)dlg.Content;
+            double clientW = dlg.Width - 2;
+
+            root.Measure(new System.Windows.Size(clientW, double.PositiveInfinity));
+            double clientH = root.DesiredSize.Height;
+            root.Arrange(new System.Windows.Rect(0, 0, clientW, clientH));
+            root.UpdateLayout();
+
+            Say($"[{label}] 内容尺寸 {clientW:N0} x {clientH:N0}");
+
+            var buttons = new List<System.Windows.Controls.Button>();
+            CollectButtons(root, buttons);
+
+            if (buttons.Count == 0)
+            {
+                Say($"  !! 找不到任何按钮");
+                failures++;
+                return;
+            }
+
+            foreach (var b in buttons)
+            {
+                // 相对窗口客户区计算按钮的右下角
+                var pt = b.TransformToAncestor(root).Transform(new System.Windows.Point(0, 0));
+                double right = pt.X + b.ActualWidth;
+                double bottom = pt.Y + b.ActualHeight;
+
+                bool insideW = right <= clientW + 1;
+                bool insideH = bottom <= clientH + 1;
+                bool visible = b.ActualWidth > 0 && b.ActualHeight > 0;
+
+                string text = b.Content?.ToString() ?? "?";
+
+                if (visible && insideW && insideH)
+                {
+                    Say($"  OK  「{text}」 右下角 ({right:N0},{bottom:N0}) 在 {clientW:N0}x{clientH:N0} 之内");
+                }
+                else
+                {
+                    Say($"  !!  「{text}」 被裁：右下角 ({right:N0},{bottom:N0}) " +
+                        $"超出 {clientW:N0}x{clientH:N0}" +
+                        (visible ? "" : "（不可见或尺寸为 0）"));
+                    failures++;
+                }
+            }
+
+            dlg.Close();
+        }
+
+        // 三种密码模式
+        foreach (PasswordDialogMode mode in Enum.GetValues<PasswordDialogMode>())
+        {
+            var dlg = PasswordDialog.CreateForInspection(mode);
+            Check(dlg, $"PasswordDialog.{mode}");
+        }
+
+        // 编辑对话框（新增 / 编辑两种标题）
+        Check(EntryEditDialog.CreateForInspection(new ApiEntry(), isNew: true),
+            "EntryEditDialog.新增");
+
+        var existing = new ApiEntry
+        {
+            Name = "很长的记录名称用于测试溢出",
+            Provider = "SomeProvider",
+            ApiKey = "sk-test-0123456789abcdef",
+            BaseUrl = "https://api.example.com/v1",
+            Model = "some-model-name",
+            Tags = "标签一,标签二,标签三",
+            Notes = "备注内容",
+            ExpiresUtc = DateTime.Today.AddDays(10),
+        };
+        Check(EntryEditDialog.CreateForInspection(existing, isNew: false), "EntryEditDialog.编辑");
+
+        // 消息框：短内容与长内容各一次
+        Check(MessageDialog.CreateForInspection(MessageKind.Info, "提示", "操作已完成。"),
+            "MessageDialog.短");
+        Check(MessageDialog.CreateForInspection(MessageKind.Expiry, "密钥到期提醒",
+                string.Join("\n", new[]
+                {
+                    "3 条已过期，2 条将在 14 天内到期",
+                    "",
+                    "· 记录一 —— 已过期 30 天",
+                    "· 记录二 —— 已过期 15 天",
+                    "· 记录三 —— 已过期 2 天",
+                    "· 记录四 —— 5 天后到期",
+                    "· 记录五 —— 12 天后到期",
+                    "",
+                    "请在列表中处理（「到期日」列已标色）。",
+                })),
+            "MessageDialog.长");
+
+        // 导入方式对话框
+        Check(new ImportModeDialog(incomingCount: 12, currentCount: 30), "ImportModeDialog");
+
+        Say("");
+        Say(failures == 0 ? "结果：全部按钮完整可见" : $"结果：{failures} 处按钮被裁");
+
+        try
+        {
+            string outPath = Path.Combine(Path.GetTempPath(), "akm-dialogcheck.txt");
+            File.WriteAllText(outPath, string.Join(Environment.NewLine, log));
+            Console.WriteLine(string.Join(Environment.NewLine, log));
+        }
+        catch { }
+
+        return failures == 0 ? 0 : 1;
+    }
+
+    private static void CollectButtons(System.Windows.DependencyObject root,
+                                       List<System.Windows.Controls.Button> sink)
+    {
+        if (root is System.Windows.Controls.Button b && b.Visibility == System.Windows.Visibility.Visible)
+            sink.Add(b);
+
+        int n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < n; i++)
+            CollectButtons(System.Windows.Media.VisualTreeHelper.GetChild(root, i), sink);
+    }
 
     /// <summary>
     /// 布局自检：创建主窗口并在真实排版后打印关键元素的实测尺寸。
