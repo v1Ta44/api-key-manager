@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <!-- 发布最低运行时，避免旧 SDK 把 9.0.0 带入正式包。 -->
+    <RuntimeFrameworkVersion>9.0.20</RuntimeFrameworkVersion>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+</Project>

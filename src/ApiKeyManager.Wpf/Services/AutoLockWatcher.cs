@@ -30,6 +30,7 @@ public sealed class AutoLockWatcher : IDisposable
     private readonly Func<int> _getIdleLimitMinutes;
     private readonly Action _onLock;
     private readonly Action<TimeSpan>? _onTick;
+    private readonly Func<DateTime> _now;
 
     private DateTime _lastActivityUtc = DateTime.UtcNow;
     private bool _hooked;
@@ -41,11 +42,13 @@ public sealed class AutoLockWatcher : IDisposable
     public AutoLockWatcher(
         Func<int> getIdleLimitMinutes,
         Action onLock,
-        Action<TimeSpan>? onTick = null)
+        Action<TimeSpan>? onTick = null,
+        Func<DateTime>? now = null)
     {
         _getIdleLimitMinutes = getIdleLimitMinutes;
         _onLock = onLock;
         _onTick = onTick;
+        _now = now ?? (() => DateTime.UtcNow);
 
         _timer = new DispatcherTimer(DispatcherPriority.Background)
         {
@@ -65,12 +68,12 @@ public sealed class AutoLockWatcher : IDisposable
             _hooked = true;
         }
 
-        _lastActivityUtc = DateTime.UtcNow;
+        _lastActivityUtc = _now();
         _timer.Start();
     }
 
     /// <summary>重置闲置计时（例如刚解锁、或执行了某个操作）。</summary>
-    public void Ping() => _lastActivityUtc = DateTime.UtcNow;
+    public void Ping() => _lastActivityUtc = _now();
 
     /// <summary>暂停计时（有模态对话框时不该自动锁定）。</summary>
     public void Pause() => _timer.Stop();
@@ -93,13 +96,16 @@ public sealed class AutoLockWatcher : IDisposable
             case WM_RBUTTONDOWN:
             case WM_MBUTTONDOWN:
             case WM_MOUSEWHEEL:
-                _lastActivityUtc = DateTime.UtcNow;
+                _lastActivityUtc = _now();
                 break;
         }
         // 不设置 handled：只观察，不拦截
     }
 
     private void OnTimerTick(object? sender, EventArgs e)
+        => Pulse();
+
+    internal void Pulse()
     {
         int minutes = _getIdleLimitMinutes();
         if (minutes <= 0)
@@ -109,7 +115,7 @@ public sealed class AutoLockWatcher : IDisposable
         }
 
         var limit = TimeSpan.FromMinutes(minutes);
-        var idle = DateTime.UtcNow - _lastActivityUtc;
+        var idle = _now() - _lastActivityUtc;
 
         if (idle >= limit)
         {

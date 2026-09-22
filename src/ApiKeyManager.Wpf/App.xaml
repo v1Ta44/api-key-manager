@@ -2,14 +2,5 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnMainWindowClose">
-    <Application.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <!-- 顺序敏感：Metrics 先，主题字典后，Controls 最后 -->
-                <ResourceDictionary Source="Themes/Metrics.xaml" />
-                <ResourceDictionary Source="Themes/Light.xaml" />
-                <ResourceDictionary Source="Themes/Controls.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </Application.Resources>
+    <Application.Resources />
 </Application>

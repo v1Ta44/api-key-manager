@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C39B0819
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiKeyManager.Tests", "tests\ApiKeyManager.Tests\ApiKeyManager.Tests.csproj", "{C19FCC07-F2A5-4401-9421-DFED31D46829}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiKeyManager.Application", "src\ApiKeyManager.Application\ApiKeyManager.Application.csproj", "{21DD4D2A-AE18-4E4A-9F37-39E0E79FB19D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,10 +36,15 @@ Global
 		{C19FCC07-F2A5-4401-9421-DFED31D46829}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C19FCC07-F2A5-4401-9421-DFED31D46829}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C19FCC07-F2A5-4401-9421-DFED31D46829}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21DD4D2A-AE18-4E4A-9F37-39E0E79FB19D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21DD4D2A-AE18-4E4A-9F37-39E0E79FB19D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21DD4D2A-AE18-4E4A-9F37-39E0E79FB19D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21DD4D2A-AE18-4E4A-9F37-39E0E79FB19D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{48A1CFBB-B6DE-48FF-B588-A63133D28465} = {1351AC88-7B11-493A-815F-BCF39DA366CD}
 		{202F09BA-4E34-483E-AD36-FB38FA20AC89} = {1351AC88-7B11-493A-815F-BCF39DA366CD}
 		{C19FCC07-F2A5-4401-9421-DFED31D46829} = {C39B0819-7922-40D4-A2A3-C0F60E5E07E1}
+		{21DD4D2A-AE18-4E4A-9F37-39E0E79FB19D} = {1351AC88-7B11-493A-815F-BCF39DA366CD}
 	EndGlobalSection
 EndGlobal

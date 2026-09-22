@@ -249,18 +249,23 @@ public static class SettingsStore
         }
     }
 
-    public static void Save(string dir, AppSettings settings)
+    public static void Save(string dir, AppSettings settings) => TrySave(dir, settings);
+
+    public static bool TrySave(string dir, AppSettings settings)
     {
+        string? temp = null;
         try
         {
             Directory.CreateDirectory(dir);
-            File.WriteAllText(Path.Combine(dir, "settings.json"), JsonSerializer.Serialize(settings, Options));
+            temp = Path.Combine(dir, "settings." + Guid.NewGuid().ToString("N") + ".tmp");
+            File.WriteAllText(temp, JsonSerializer.Serialize(settings, Options));
+            File.Move(temp, Path.Combine(dir, "settings.json"), true);
+            return true;
         }
-        catch
-        {
-            // 设置写入失败不影响主功能
-        }
+        catch { return false; }
+        finally { try { if (temp != null && File.Exists(temp)) File.Delete(temp); } catch { } }
     }
+
 }
 
 public static class DataPaths

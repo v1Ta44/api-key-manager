@@ -16,29 +16,13 @@
     <Version>2.0.0</Version>
     <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
 
-    <ApplicationIcon Condition="Exists('icon.ico')">icon.ico</ApplicationIcon>
+    <ApplicationIcon>../../icon.ico</ApplicationIcon>
     <!-- 多显示器不同缩放下的正确 DPI 行为 -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
     <StartupObject>ApiKeyManager.Wpf.App</StartupObject>
 
-    <!--
-      发布设置。两种形态实测结果（Release / win-x64 / 单文件）：
-
-        框架依赖 (SelfContained=false)  0.29 MB
-          需要目标机安装 .NET 9 Desktop Runtime。
-          体积和原 WinForms 版相当，作为默认发布形态。
-
-        自包含   (SelfContained=true)  61.9 MB
-          免安装运行时，但 WPF 的原生渲染组件
-          （D3DCompiler_47_cor3 / wpfgfx_cor3 / PresentationNative_cor3 / PenImc_cor3）
-          无法并入单文件，所以成品是 exe + 4 个 DLL。
-
-      注意：WPF 不支持 PublishTrimmed，开启会得到
-      NETSDK1168（官方明确说明不支持裁剪 WPF），因此这里的 61.9 MB 已是下限。
-
-      两种形态都放在 publish-profiles 里，用 -p:PublishProfile=<名字> 选择。
-    -->
+    <!-- WPF 不支持裁剪；框架依赖与自包含的实际体积由 verify-publish.ps1 记录。 -->
     <!--
       发布默认值。
       注意这些都只在 Publish 时生效（用 '$(PublishProfile)' 或显式传参覆盖）：
@@ -55,13 +39,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ApiKeyManager.Core\ApiKeyManager.Core.csproj" />
+    <ProjectReference Include="..\ApiKeyManager.Application\ApiKeyManager.Application.csproj" />
   </ItemGroup>
 
   <!-- 构建脚手架（makeicon / glyphcheck 命令行分支）需要 System.Drawing 来生成 PNG/ICO。
        WPF 在 net9.0-windows 下默认不包含 System.Drawing.Common，需要显式引用。
        这些类型只在命令行分支里用到，不参与 GUI 运行时路径。 -->
   <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.20" />
   </ItemGroup>
 
   <ItemGroup>

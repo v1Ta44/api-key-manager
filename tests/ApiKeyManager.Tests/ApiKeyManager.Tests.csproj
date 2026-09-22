@@ -32,6 +32,10 @@
       因此这里去掉，测试项目也不必再开 UseWindowsForms。
     -->
     <ProjectReference Include="..\..\src\ApiKeyManager.Core\ApiKeyManager.Core.csproj" />
+    <ProjectReference Include="..\..\src\ApiKeyManager.Application\ApiKeyManager.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="../../src/ApiKeyManager.Wpf/ViewModels/WorkspaceViewModel.cs" Link="Production/WorkspaceViewModel.cs" />
+  </ItemGroup>
 </Project>

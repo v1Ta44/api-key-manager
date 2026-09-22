@@ -59,9 +59,9 @@ public sealed class ClipboardGuardTests
     }
 
     [Fact]
-    public void ForceTick_ClearsRegardlessOfContent()
+    public void ForceTick_PreservesForeignContent()
     {
-        // 锁定 / 退出时无条件清理
+        // 锁定 / 退出也不能清理用户后来复制的内容
         string actual = "whatever";
         int cleared = 0;
         var guard = new ClipboardGuard(() => actual, () => cleared++);
@@ -69,7 +69,7 @@ public sealed class ClipboardGuardTests
         guard.Track("secret", 3600);
         guard.Tick(force: true);
 
-        Assert.Equal(1, cleared);
+        Assert.Equal(0, cleared);
         Assert.False(guard.HasPending);
     }
 
@@ -108,8 +108,22 @@ public sealed class ClipboardGuardTests
         guard.Track("secret", 1);
         Thread.Sleep(1100);
 
-        guard.Tick(force: false); // 不应抛出
+        guard.Tick(force: false); // 不应抛出，先保留待清理内容
+        Assert.True(guard.HasPending);
+        for (int i = 0; i < 4; i++) guard.Tick(force: true);
+        Assert.True(guard.CleanupFailed);
         Assert.False(guard.HasPending);
+    }
+
+    [Fact]
+    public void OccupiedClipboardRetriesAndRecovers()
+    {
+        var unavailable = true; var cleared = 0;
+        var guard = new ClipboardGuard(() => unavailable ? null : "secret", () => cleared++);
+        guard.Track("secret", 30); guard.Tick(true);
+        Assert.True(guard.HasPending); Assert.Equal(0, cleared);
+        unavailable = false; guard.Tick(true);
+        Assert.False(guard.HasPending); Assert.False(guard.CleanupFailed); Assert.Equal(1, cleared);
     }
 
     [Fact]

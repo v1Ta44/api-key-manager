@@ -1,120 +1,37 @@
-﻿# API Key 管理器 发布验证脚本
-#
-# 用法：
-#   .\tools\verify-publish.ps1
-#
-# 做三件事：
-#   1. 用两种形态各发布一次（框架依赖 / 自包含）
-#   2. 检查体积
-#   3. 对每个产物跑一次 --selftest，确认发布后的二进制真能跑
-#
-# 为什么必须在发布后单独跑自检：
-#   Release + 单文件 + 压缩会和 Debug 走完全不同的打包路径
-#   （IL 合并、资源内嵌、程序集解析都不同），
-#   编译通过不代表发布产物能启动 —— 这里就是最后一道闸。
-param(
-    [string]$Configuration = "Release",
-    [string]$OutRoot = "publish-test"
-)
-
-$ErrorActionPreference = "Stop"
-$root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-Set-Location $root
-
-Get-Process -Name ApiKeyManager -ErrorAction SilentlyContinue | Stop-Process -Force
-
-$project = ".\src\ApiKeyManager.Wpf\ApiKeyManager.Wpf.csproj"
-$failed = $false
-
-function Publish-One {
-    param([string]$Name, [bool]$SelfContained, [string]$OutDir)
-
-    Write-Host ""
-    Write-Host "=== 发布: $Name ==="
-    Remove-Item -Recurse -Force $OutDir -ErrorAction SilentlyContinue
-
-    # 注意：不要用 $args —— 那是 PowerShell 的自动变量，赋值会被静默忽略
-    $dotnetArgs = @(
-        "publish", $project,
-        "-c", $Configuration,
-        "-r", "win-x64",
-        "--self-contained", $SelfContained.ToString().ToLowerInvariant(),
-        "-p:PublishSingleFile=true",
-        "-p:DebugType=none",
-        "-o", $OutDir,
-        "--nologo", "-v", "q"
-    )
-
-    # 单文件压缩只支持自包含发布；框架依赖版开启会得到 NETSDK1176
-    if ($SelfContained) { $dotnetArgs += "-p:EnableCompressionInSingleFile=true" }
-
-    $output = & dotnet @dotnetArgs 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  发布失败："
-        $output | Select-Object -Last 10 | ForEach-Object { Write-Host "    $_" }
-        return $null
+﻿# 本地打包与验证。每次使用新目录，不删除旧产物，不终止用户进程。
+param([string]$Configuration = 'Release', [string]$OutRoot = 'artifacts\publish', [string]$DotnetPath = 'dotnet')
+$ErrorActionPreference = 'Stop'
+$projectRoot = Split-Path -Parent $PSScriptRoot
+$project = Join-Path $projectRoot 'src\ApiKeyManager.Wpf\ApiKeyManager.Wpf.csproj'
+$outputRoot = if ([IO.Path]::IsPathRooted($OutRoot)) { $OutRoot } else { Join-Path $projectRoot $OutRoot }
+$run = Join-Path ([IO.Path]::GetFullPath($outputRoot)) (Get-Date -Format 'yyyyMMdd-HHmmss-ffff')
+New-Item -ItemType Directory -Path $run | Out-Null
+$results = @()
+function Invoke-CheckedProcess([string]$File, [string[]]$Arguments) {
+    $process = Start-Process -FilePath $File -ArgumentList $Arguments -PassThru -WindowStyle Hidden
+    if (-not $process.WaitForExit(120000)) {
+        # 只终止本次启动且超时的检查器。
+        Stop-Process -Id $process.Id -ErrorAction SilentlyContinue
+        throw "检查超时：$File"
     }
-
-    $files = Get-ChildItem $OutDir -Recurse -File
-    $total = ($files | Measure-Object Length -Sum).Sum
-    # 用 Write-Host 而不是 Write-Output：后者会混进函数返回值，
-    # 调用方拿到的就是数组而不是单个哈希表，$fd.Dir 会变成空串。
-    Write-Host ("  文件数: {0}" -f $files.Count)
-    Write-Host ("  总大小: {0:N2} MB" -f ($total / 1MB))
-
-    return @{ Dir = $OutDir; Files = $files.Count; Bytes = $total }
+    $process.Refresh()
+    if ($process.ExitCode -ne 0) { throw "检查失败（$($process.ExitCode)）：$File $Arguments" }
 }
-
-function Test-Artifact {
-    param([string]$Dir, [string]$Label)
-
-    # 同样用 Write-Host，避免消息混进布尔返回值
-    $exe = Join-Path $Dir "ApiKeyManager.exe"
-    if (-not (Test-Path $exe)) {
-        Write-Host "  [$Label] 找不到 ApiKeyManager.exe"
-        return $false
-    }
-
-    $out = & $exe --selftest 2>&1
-    $code = $LASTEXITCODE
-    $allPass = ($out | Select-String -Pattern "ALL PASS" -Quiet)
-
-    # 退出码是权威判据。自包含版会 attach 到自己的控制台，
-    # stdout 不一定能被父进程管道捕获，只按文本判断会误报失败。
-    if ($code -eq 0) {
-        if ($allPass) {
-            Write-Host "  [$Label] 自检通过 (exit 0, ALL PASS)"
-        } else {
-            Write-Host "  [$Label] 自检通过 (exit 0；控制台输出未捕获，属正常)"
-        }
-        return $true
-    }
-
-    Write-Host "  [$Label] 自检失败 exit=$code"
-    $out | Select-Object -Last 6 | ForEach-Object { Write-Host "    $_" }
-    return $false
+foreach ($kind in @('fd', 'sc')) {
+    $out = Join-Path $run $kind
+    $selfContained = ($kind -eq 'sc').ToString().ToLowerInvariant()
+    # 单文件选项已在 WPF 项目中声明，不作为全局参数传入纯类库，避免改变它们的锁定依赖图。
+    & $DotnetPath publish $project -c $Configuration -r win-x64 --self-contained $selfContained -p:RestoreLockedMode=true -p:DebugType=none -o $out --nologo -v minimal -warnaserror
+    if ($LASTEXITCODE -ne 0) { throw "打包失败：$kind" }
+    $exe = Join-Path $out 'ApiKeyManager.exe'
+    Invoke-CheckedProcess $exe @('--selftest')
+    $checkDir = Join-Path $run ($kind + '-checks')
+    Invoke-CheckedProcess $exe @('--workspace-check', ('"' + $checkDir + '"'))
+    $checks = Get-Content (Join-Path $checkDir 'checks.json') -Raw | ConvertFrom-Json
+    if ($checks.failure -or $checks.passed -lt 79) { throw "窗口检查报告不完整：$checkDir" }
+    $files = Get-ChildItem -LiteralPath $out -File
+    $results += [pscustomobject]@{ Kind = $kind; Directory = $out; Files = $files.Count; Bytes = ($files | Measure-Object Length -Sum).Sum; SelfTest = 'passed'; WorkspaceCheck = 'passed'; CheckCount = $checks.passed; Runtime = $checks.runtime; Sha256 = (Get-FileHash $exe -Algorithm SHA256).Hash }
 }
-
-Write-Output "=== 发布验证开始 ==="
-Write-Output "配置: $Configuration   目标: win-x64"
-
-$fd = Publish-One -Name "框架依赖单文件" -SelfContained $false -OutDir "$OutRoot\fd"
-$sc = Publish-One -Name "自包含单文件"   -SelfContained $true  -OutDir "$OutRoot\sc"
-
-Write-Output ""
-Write-Output "=== 体积对比 ==="
-if ($fd) { Write-Output ("  框架依赖: {0:N2} MB  ({1} 个文件)" -f ($fd.Bytes/1MB), $fd.Files) }
-if ($sc) { Write-Output ("  自包含:   {0:N2} MB  ({1} 个文件)" -f ($sc.Bytes/1MB), $sc.Files) }
-
-Write-Output ""
-Write-Output "=== 产物自检 ==="
-if ($fd) { if (-not (Test-Artifact -Dir $fd.Dir -Label "框架依赖")) { $failed = $true } }
-if ($sc) { if (-not (Test-Artifact -Dir $sc.Dir -Label "自包含"))   { $failed = $true } }
-
-Write-Output ""
-if ($failed) {
-    Write-Output "结果：存在失败项"
-    exit 1
-}
-Write-Output "结果：全部通过"
-exit 0
+$results | ConvertTo-Json | Set-Content (Join-Path $run 'publish-results.json') -Encoding utf8
+$results | Format-Table -AutoSize
+Write-Output "本地产物与验证记录：$run"

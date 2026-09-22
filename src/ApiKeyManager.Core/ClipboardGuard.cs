@@ -14,6 +14,8 @@ public sealed class ClipboardGuard
 
     private string? _text;
     private DateTime _clearAt;
+    private int _failures;
+    public bool CleanupFailed { get; private set; }
 
     public ClipboardGuard(Func<string?> readText, Action clear)
     {
@@ -30,6 +32,8 @@ public sealed class ClipboardGuard
     /// <summary>记录一次复制，<paramref name="seconds"/> &lt;= 0 表示不自动清除。</summary>
     public void Track(string value, int seconds)
     {
+        _failures = 0;
+        CleanupFailed = false;
         if (string.IsNullOrEmpty(value) || seconds <= 0)
         {
             _text = null;
@@ -39,7 +43,7 @@ public sealed class ClipboardGuard
         _clearAt = DateTime.UtcNow.AddSeconds(seconds);
     }
 
-    /// <summary>到点则清理；<paramref name="force"/> 为 true 时无条件立即清理（退出 / 锁定时用）。</summary>
+    /// <summary>到点或强制时清理自己的内容；被占用最多重试五次。</summary>
     public void Tick(bool force)
     {
         if (_text == null) return;
@@ -47,14 +51,18 @@ public sealed class ClipboardGuard
 
         try
         {
-            if (force || _readText() == _text)
+            var current = _readText();
+            if (current == null) throw new InvalidOperationException("剪贴板暂不可用");
+            if (current == _text)
             {
                 _clear();
             }
         }
         catch
         {
-            // 剪贴板被其他进程占用时忽略，不能因为清理失败影响主流程
+            _clearAt = DateTime.UtcNow;
+            if (++_failures < 5) return;
+            CleanupFailed = true;
         }
 
         _text = null;

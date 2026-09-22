@@ -1,0 +1,233 @@
+<Window x:Class="ApiKeyManager.Wpf.Prototype.PrototypeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="API Key 管理器 · 设计原型" Width="1180" Height="800" MinWidth="900" MinHeight="600"
+        FontFamily="Segoe UI, Microsoft YaHei UI" FontSize="14" Background="{DynamicResource PCanvas}"
+        Foreground="{DynamicResource PText}" WindowStartupLocation="CenterScreen"
+        UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Themes/WorkspaceStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid x:Name="Root" Background="{DynamicResource PCanvas}">
+        <Grid.RowDefinitions><RowDefinition Height="64" /><RowDefinition Height="*" /><RowDefinition Height="40" /></Grid.RowDefinitions>
+        <Border Background="{DynamicResource PSurface}" BorderBrush="{DynamicResource PBorder}" BorderThickness="0,0,0,1">
+            <Grid Margin="28,0">
+                <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="32" Height="32" CornerRadius="9" Background="{DynamicResource PAccent}" Margin="0,0,12,0">
+                        <Path Data="M 8,15 A 5,5 0 1 1 16,11 L 25,20 L 22,23 L 20,21 L 18,23 L 15,20 L 16,18 Z"
+                              Stroke="{DynamicResource POnAccent}" StrokeThickness="1.5" Width="22" Height="22" Stretch="Uniform" />
+                    </Border>
+                    <TextBlock Text="API Key 管理器" FontWeight="SemiBold" FontSize="16" />
+                    <Border Background="{DynamicResource PSubtle}" CornerRadius="4" Padding="7,3" Margin="14,0,0,0">
+                        <TextBlock Text="本地空间" Style="{StaticResource PCaption}" FontSize="11" />
+                    </Border>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="SessionLabel" Text="●  已解锁" Foreground="{DynamicResource PSuccess}" FontSize="12" Margin="0,0,18,0" />
+                    <Button x:Name="ThemeButton" Content="深色模式" Style="{StaticResource PQuiet}" Click="OnTheme" ToolTip="切换深浅主题 · Ctrl+T" />
+                    <Button x:Name="LockButton" Content="锁定" Style="{StaticResource PButton}" Margin="8,0,0,0" Click="OnLock" ToolTip="锁定空间 · Ctrl+L" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid x:Name="Workspace" Grid.Row="1" Margin="28,24,28,16">
+            <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition x:Name="DetailGap" Width="20" /><ColumnDefinition x:Name="DetailColumn" Width="306" /></Grid.ColumnDefinitions>
+            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition /></Grid.RowDefinitions>
+            <Grid Grid.ColumnSpan="3" Margin="0,0,0,22">
+                <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="密钥" FontSize="28" FontWeight="SemiBold" />
+                    <TextBlock Text="连接信息，随用随取。" Style="{StaticResource PCaption}" Margin="0,6,0,0" />
+                </StackPanel>
+                <Button x:Name="AddButton" Grid.Column="1" Style="{StaticResource PPrimary}" Content="＋  新增密钥" Click="OnAdd" VerticalAlignment="Center" ToolTip="新增记录 · Ctrl+N" />
+            </Grid>
+            <Border x:Name="SearchPanel" Grid.Row="1" Background="{DynamicResource PSurface}" BorderThickness="1" CornerRadius="8" Height="44">
+                <Border.Style><Style TargetType="Border">
+                    <Setter Property="BorderBrush" Value="{DynamicResource PBorder}" />
+                    <Style.Triggers><DataTrigger Binding="{Binding IsKeyboardFocusWithin, ElementName=SearchBox}" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource PAccent}" />
+                    </DataTrigger></Style.Triggers>
+                </Style></Border.Style>
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="40" /><ColumnDefinition /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource PMuted}" HorizontalAlignment="Center" />
+                    <TextBox x:Name="SearchBox" Grid.Column="1" Style="{StaticResource PSearch}" BorderBrush="Transparent" Height="40" Padding="0,9" TextChanged="OnSearch"
+                             AutomationProperties.Name="搜索名称、平台、模型或标签" />
+                    <TextBlock x:Name="SearchPlaceholder" Grid.Column="1" Text="搜索名称、平台、模型或标签" Foreground="{DynamicResource PMuted}" IsHitTestVisible="False" FontSize="13" />
+                    <Button x:Name="ClearSearchButton" Grid.Column="2" Content="清除" Style="{StaticResource PQuiet}" Click="OnClearSearch" Visibility="Collapsed" />
+                    <TextBlock Grid.Column="3" Text="Ctrl F" Style="{StaticResource PCaption}" Margin="12,0,16,0" />
+                </Grid>
+            </Border>
+            <Grid x:Name="FilterPanel" Grid.Row="2" Margin="0,16,0,16">
+                <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton x:Name="FilterAll" Content="全部  6" GroupName="ExpiryFilter" Style="{StaticResource PFilter}" IsChecked="True" Checked="OnFilter" />
+                    <RadioButton x:Name="FilterSoon" Content="即将到期  1" GroupName="ExpiryFilter" Style="{StaticResource PFilter}" Checked="OnFilter" />
+                    <RadioButton x:Name="FilterExpired" Content="已过期  1" GroupName="ExpiryFilter" Style="{StaticResource PFilter}" Checked="OnFilter" />
+                </StackPanel>
+                <TextBlock x:Name="CountLabel" Grid.Column="1" Text="6 条记录" Style="{StaticResource PCaption}" />
+            </Grid>
+
+            <Grid x:Name="BodyGrid" Grid.Row="3">
+                <Grid x:Name="ListPane">
+                    <Grid.RowDefinitions><RowDefinition Height="30" /><RowDefinition /><RowDefinition Height="28" /></Grid.RowDefinitions>
+                    <Grid Margin="14,0,30,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="138" /><ColumnDefinition Width="88" /><ColumnDefinition Width="64" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="名称 / 平台" Style="{StaticResource PCaption}" FontSize="11" />
+                        <TextBlock Grid.Column="1" Text="密钥" Style="{StaticResource PCaption}" FontSize="11" />
+                        <TextBlock Grid.Column="2" Text="到期状态" Style="{StaticResource PCaption}" FontSize="11" />
+                    </Grid>
+                    <ListBox x:Name="EntryList" Grid.Row="1" Background="Transparent" Foreground="{DynamicResource PText}" BorderThickness="0" Padding="0" SelectionMode="Single"
+                             ItemContainerStyle="{StaticResource PListItem}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Visible" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                             SelectionChanged="OnSelection" PreviewMouseLeftButtonUp="OnListPointer" AutomationProperties.Name="密钥记录">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Height="54" Margin="12,0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="138" /><ColumnDefinition Width="88" /><ColumnDefinition Width="64" /></Grid.ColumnDefinitions>
+                                    <Grid Margin="0,0,10,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="42" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                        <Border Width="32" Height="32" CornerRadius="8" Background="{DynamicResource PSurface}" BorderBrush="{DynamicResource PBorder}" BorderThickness="1" HorizontalAlignment="Left">
+                                            <TextBlock Text="{Binding Monogram}" Foreground="{DynamicResource PText}" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="13" HorizontalAlignment="Center" />
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" Foreground="{DynamicResource PText}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" />
+                                            <TextBlock Text="{Binding Subtitle}" Style="{StaticResource PCaption}" FontSize="11" Margin="0,5,0,0" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock Grid.Column="1" Text="{Binding KeyHint}" VerticalAlignment="Center" FontFamily="Cascadia Mono, Consolas" Foreground="{DynamicResource PMuted}" FontSize="12" Margin="0,0,10,0" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="2" Text="{Binding ExpiryLabel}" FontSize="11">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{DynamicResource PMuted}" />
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ExpiryKind}" Value="Soon"><Setter Property="Foreground" Value="{DynamicResource PWarning}" /></DataTrigger>
+                                                    <DataTrigger Binding="{Binding ExpiryKind}" Value="Expired"><Setter Property="Foreground" Value="{DynamicResource PDanger}" /></DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <Button Grid.Column="3" Content="复制" Style="{StaticResource PQuiet}" Padding="8,0" Height="32" Click="OnRowCopy" Tag="{Binding}" AutomationProperties.Name="{Binding CopyLabel}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <StackPanel x:Name="EmptyState" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
+                        <TextBlock Text="没有找到匹配的记录" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                        <TextBlock Text="试试平台名称，或清除当前筛选。" Style="{StaticResource PCaption}" Margin="0,10,0,20" />
+                        <Button Content="清除搜索与筛选" Style="{StaticResource PButton}" Click="OnResetFilter" />
+                    </StackPanel>
+                    <TextBlock Grid.Row="2" Text="选择记录查看详情   ·   Ctrl+F 快速查找" Style="{StaticResource PCaption}" FontSize="11" Margin="14,0" />
+                </Grid>
+            </Grid>
+
+                <Border x:Name="DetailPane" Grid.Row="1" Grid.RowSpan="3" Grid.Column="2" Background="{DynamicResource PSurface}" BorderBrush="{DynamicResource PBorder}" BorderThickness="1" CornerRadius="10">
+                    <Grid Margin="22,14,22,18">
+                        <Grid.RowDefinitions><RowDefinition Height="36" /><RowDefinition /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                        <Grid>
+                            <TextBlock Text="当前记录" Style="{StaticResource PCaption}" FontSize="11" />
+                            <Button x:Name="CloseDetailButton" Content="关闭" Style="{StaticResource PQuiet}" HorizontalAlignment="Right" Padding="8,0" Height="30" Click="OnCloseDetail" />
+                        </Grid>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel x:Name="DetailContent" DataContext="{Binding Selected}">
+                                <TextBlock Text="{Binding Name}" FontSize="21" FontWeight="SemiBold" Margin="0,10,0,6" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding Provider}" Style="{StaticResource PCaption}" Margin="0,0,0,24" />
+                                <TextBlock Text="API KEY" Style="{StaticResource PFieldLabel}" FontSize="10" />
+                                <Border Background="{DynamicResource PSubtle}" CornerRadius="6" Padding="12">
+                                    <TextBlock x:Name="DetailKey" Text="•••• •••• •••• 4a9f" FontFamily="Cascadia Mono, Consolas" FontSize="13" TextWrapping="Wrap" />
+                                </Border>
+                                <Grid Margin="0,9,0,22">
+                                    <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="8" /><ColumnDefinition Width="70" /></Grid.ColumnDefinitions>
+                                    <Button x:Name="CopyButton" Content="复制密钥" Style="{StaticResource PButton}" Click="OnCopy" />
+                                    <Button x:Name="RevealButton" Grid.Column="2" Content="显示" Style="{StaticResource PQuiet}" Click="OnReveal" />
+                                </Grid>
+                                <TextBlock Text="BASE URL" Style="{StaticResource PFieldLabel}" FontSize="10" />
+                                <TextBlock Text="{Binding Url}" FontFamily="Cascadia Mono, Consolas" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,18" />
+                                <TextBlock Text="默认模型" Style="{StaticResource PFieldLabel}" />
+                                <TextBlock Text="{Binding Model}" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,18" />
+                                <TextBlock Text="标签" Style="{StaticResource PFieldLabel}" />
+                                <TextBlock Text="{Binding Tags}" Foreground="{DynamicResource PAccent}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,18" />
+                                <TextBlock Text="备注" Style="{StaticResource PFieldLabel}" />
+                                <TextBlock Text="{Binding Notes}" FontSize="12" Foreground="{DynamicResource PMuted}" TextWrapping="Wrap" LineHeight="20" Margin="0,0,0,16" />
+                            </StackPanel>
+                        </ScrollViewer>
+                        <Button x:Name="EditButton" Grid.Row="2" Content="编辑记录" Style="{StaticResource PButton}" Click="OnEdit" Margin="0,14,0,0" />
+                    </Grid>
+                </Border>
+        </Grid>
+
+        <Border Grid.Row="2" Background="{DynamicResource PSurface}" BorderBrush="{DynamicResource PBorder}" BorderThickness="0,1,0,0">
+            <Grid Margin="28,0">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <TextBlock Text="设计预览 · 仅示例数据" Style="{StaticResource PCaption}" FontSize="11" />
+                <TextBlock x:Name="Feedback" Grid.Column="1" Margin="22,0,12,0" FontSize="11" Foreground="{DynamicResource PSuccess}" TextTrimming="CharacterEllipsis" AutomationProperties.LiveSetting="Polite" />
+                <Button x:Name="StyleButton" Grid.Column="2" Content="对照：温润档案 →" Style="{StaticResource PQuiet}" FontSize="11" Height="30" Padding="8,0" Click="OnStyle" />
+            </Grid>
+        </Border>
+
+        <Grid x:Name="EditorOverlay" Grid.Row="1" Visibility="Collapsed" Background="{DynamicResource POverlay}" KeyboardNavigation.TabNavigation="Cycle">
+            <Border x:Name="EditorPanel" Width="510" HorizontalAlignment="Right" Background="{DynamicResource PSurface}" BorderBrush="{DynamicResource PBorder}" BorderThickness="1,0,0,0">
+                <Grid Margin="28,24,28,20">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                    <StackPanel Margin="0,0,0,20">
+                        <TextBlock x:Name="EditorTitle" Text="编辑记录" FontSize="23" FontWeight="SemiBold" />
+                        <TextBlock Text="整理连接信息，下次直接使用。" Style="{StaticResource PCaption}" Margin="0,7,0,0" />
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0,0,8,0">
+                            <TextBlock Text="基本信息" Foreground="{DynamicResource PAccent}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,14" />
+                            <Grid Margin="0,0,0,17">
+                                <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="16" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="名称 *" Style="{StaticResource PFieldLabel}" /><TextBox x:Name="EditName" Style="{StaticResource PInput}" AutomationProperties.Name="记录名称" /></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="平台" Style="{StaticResource PFieldLabel}" /><TextBox x:Name="EditProvider" Style="{StaticResource PInput}" AutomationProperties.Name="平台" /></StackPanel>
+                            </Grid>
+                            <TextBlock Text="连接信息" Foreground="{DynamicResource PAccent}" FontSize="11" FontWeight="SemiBold" Margin="0,4,0,14" />
+                            <TextBlock Text="API Key" Style="{StaticResource PFieldLabel}" />
+                            <PasswordBox x:Name="EditKey" Style="{StaticResource PPassword}" AutomationProperties.Name="API Key" Margin="0,0,0,17" />
+                            <TextBlock Text="Base URL" Style="{StaticResource PFieldLabel}" />
+                            <TextBox x:Name="EditUrl" Style="{StaticResource PInput}" AutomationProperties.Name="Base URL" Margin="0,0,0,17" />
+                            <TextBlock Text="默认模型" Style="{StaticResource PFieldLabel}" />
+                            <TextBox x:Name="EditModel" Style="{StaticResource PInput}" AutomationProperties.Name="默认模型" Margin="0,0,0,17" />
+                            <TextBlock Text="管理信息" Foreground="{DynamicResource PAccent}" FontSize="11" FontWeight="SemiBold" Margin="0,4,0,14" />
+                            <Grid Margin="0,0,0,17">
+                                <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="16" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                <StackPanel><TextBlock Text="标签（逗号分隔）" Style="{StaticResource PFieldLabel}" /><TextBox x:Name="EditTags" Style="{StaticResource PInput}" AutomationProperties.Name="标签" /></StackPanel>
+                                <StackPanel Grid.Column="2"><TextBlock Text="到期日（留空不设置）" Style="{StaticResource PFieldLabel}" /><TextBox x:Name="EditExpiry" Style="{StaticResource PInput}" AutomationProperties.Name="到期日，格式 yyyy-MM-dd" /></StackPanel>
+                            </Grid>
+                            <TextBlock Text="备注" Style="{StaticResource PFieldLabel}" />
+                            <TextBox x:Name="EditNotes" Style="{StaticResource PInput}" AutomationProperties.Name="备注" Height="76" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                        </StackPanel>
+                    </ScrollViewer>
+                    <TextBlock x:Name="EditorError" Grid.Row="2" Foreground="{DynamicResource PDanger}" FontSize="12" Margin="0,10,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Assertive" />
+                    <Grid Grid.Row="3" Margin="0,17,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="仅修改演示数据" Style="{StaticResource PCaption}" FontSize="11" />
+                        <Button x:Name="CancelEditButton" Grid.Column="1" Content="取消" Style="{StaticResource PButton}" Click="OnCancelEdit" Margin="0,0,8,0" />
+                        <Button x:Name="SaveEditButton" Grid.Column="2" Content="保存预览" Style="{StaticResource PPrimary}" Click="OnSaveEdit" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="LockScreen" Grid.Row="1" Background="{DynamicResource PCanvas}" Visibility="Collapsed" KeyboardNavigation.TabNavigation="Cycle">
+            <StackPanel Width="350" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Border Width="60" Height="60" CornerRadius="18" Background="{DynamicResource PAccentSoft}" HorizontalAlignment="Left" Margin="0,0,0,24">
+                    <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="26" Foreground="{DynamicResource PAccent}" HorizontalAlignment="Center" />
+                </Border>
+                <TextBlock Text="你的密钥，妥善归位。" FontSize="27" FontWeight="SemiBold" Margin="0,0,0,10" />
+                <TextBlock Text="输入主密码，继续访问本地空间。" Style="{StaticResource PCaption}" Margin="0,0,0,32" />
+                <TextBlock Text="主密码" Style="{StaticResource PFieldLabel}" />
+                <PasswordBox x:Name="UnlockPassword" Style="{StaticResource PPassword}" AutomationProperties.Name="解锁主密码" KeyDown="OnUnlockKeyDown" />
+                <TextBlock x:Name="UnlockError" Foreground="{DynamicResource PDanger}" FontSize="12" Margin="0,10,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Assertive" />
+                <Button x:Name="UnlockButton" Content="解锁空间" Style="{StaticResource PPrimary}" Height="44" Margin="0,16,0,0" Click="OnUnlock" />
+                <TextBlock Text="演示密码：demo · 请勿输入真实密码" Style="{StaticResource PCaption}" FontSize="11" Margin="0,20,0,0" HorizontalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
