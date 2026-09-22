@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ApiKeyManager.Wpf</RootNamespace>
+    <AssemblyName>ApiKeyManager</AssemblyName>
+
+    <Product>API Key 管理器</Product>
+    <AssemblyTitle>API Key 管理器</AssemblyTitle>
+    <Description>本地加密的 API Key 管理小工具</Description>
+    <Company>Local</Company>
+    <Version>2.0.0</Version>
+    <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
+
+    <ApplicationIcon Condition="Exists('icon.ico')">icon.ico</ApplicationIcon>
+    <!-- 多显示器不同缩放下的正确 DPI 行为 -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <StartupObject>ApiKeyManager.Wpf.App</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ApiKeyManager.Core\ApiKeyManager.Core.csproj" />
+  </ItemGroup>
+
+  <!-- 构建脚手架（makeicon / glyphcheck 命令行分支）需要 System.Drawing 来生成 PNG/ICO。
+       WPF 在 net9.0-windows 下默认不包含 System.Drawing.Common，需要显式引用。
+       这些类型只在命令行分支里用到，不参与 GUI 运行时路径。 -->
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\IconFactory.cs" Link="Tools\IconFactory.cs" />
+    <Compile Include="..\..\SelfTest.cs" Link="Tools\SelfTest.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="..\..\icon.ico" Link="Assets\icon.ico" Condition="Exists('..\..\icon.ico')" />
+  </ItemGroup>
+
+</Project>

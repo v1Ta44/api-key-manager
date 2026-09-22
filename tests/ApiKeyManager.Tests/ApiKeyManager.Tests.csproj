@@ -16,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Core 层测试：不依赖任何 UI -->
+    <ProjectReference Include="..\..\src\ApiKeyManager.Core\ApiKeyManager.Core.csproj" />
+    <!-- WinForms 工程：仅为 AccessibilityTests 等 UI 相关测试保留，阶段 4 删除 -->
     <ProjectReference Include="..\..\ApiKeyManager.csproj" />
   </ItemGroup>
 

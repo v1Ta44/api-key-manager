@@ -21,10 +21,17 @@
   <ItemGroup>
     <Compile Remove="tests\**" />
     <None Remove="tests\**" />
+    <!-- src\ 下的其它工程同理（Core 是独立项目，WPF 版由自己的 csproj 负责） -->
+    <Compile Remove="src\**" />
+    <None Remove="src\**" />
   </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="ApiKeyManager.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="src\ApiKeyManager.Core\ApiKeyManager.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -9,6 +9,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{AD11156B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiKeyManager.Tests", "tests\ApiKeyManager.Tests\ApiKeyManager.Tests.csproj", "{CF244716-0C4A-4F87-A283-D94AA043F24C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E7572A3F-50F2-4AE5-BA76-0819DB453741}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiKeyManager.Core", "src\ApiKeyManager.Core\ApiKeyManager.Core.csproj", "{670BCBA4-3488-458E-B2FF-A3610D364D0B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiKeyManager.Wpf", "src\ApiKeyManager.Wpf\ApiKeyManager.Wpf.csproj", "{61AFA6C5-9111-4082-A01E-00EFE28D8696}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,8 +32,18 @@ Global
 		{CF244716-0C4A-4F87-A283-D94AA043F24C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CF244716-0C4A-4F87-A283-D94AA043F24C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CF244716-0C4A-4F87-A283-D94AA043F24C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{670BCBA4-3488-458E-B2FF-A3610D364D0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{670BCBA4-3488-458E-B2FF-A3610D364D0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{670BCBA4-3488-458E-B2FF-A3610D364D0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{670BCBA4-3488-458E-B2FF-A3610D364D0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61AFA6C5-9111-4082-A01E-00EFE28D8696}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61AFA6C5-9111-4082-A01E-00EFE28D8696}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61AFA6C5-9111-4082-A01E-00EFE28D8696}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61AFA6C5-9111-4082-A01E-00EFE28D8696}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CF244716-0C4A-4F87-A283-D94AA043F24C} = {AD11156B-D8AF-414A-B289-7F198E0BAA24}
+		{670BCBA4-3488-458E-B2FF-A3610D364D0B} = {E7572A3F-50F2-4AE5-BA76-0819DB453741}
+		{61AFA6C5-9111-4082-A01E-00EFE28D8696} = {E7572A3F-50F2-4AE5-BA76-0819DB453741}
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,172 @@
+<Window x:Class="ApiKeyManager.Wpf.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="API Key 管理器"
+        Width="{StaticResource WindowWidth}"
+        Height="{StaticResource WindowHeight}"
+        MinWidth="{StaticResource WindowMinWidth}"
+        MinHeight="{StaticResource WindowMinHeight}"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource Back}"
+        TextOptions.TextFormattingMode="Ideal"
+        UseLayoutRounding="True">
+
+    <!--
+      整体布局：三行；全部用 Grid/StackPanel，没有任何绝对坐标。
+      这是与 WinForms 版最本质的区别 —— 加一个字段/改字号不需要重算任何位置。
+    -->
+    <Grid Margin="{StaticResource PadWindow}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <!-- 工具栏卡片 -->
+            <RowDefinition Height="*" />
+            <!-- 列表卡片 -->
+            <RowDefinition Height="Auto" />
+            <!-- 状态栏 -->
+        </Grid.RowDefinitions>
+
+        <!-- ============ 顶部工具栏卡片 ============ -->
+        <Border Grid.Row="0" Style="{StaticResource Card}" Margin="0,0,0,12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- 标题行 -->
+                <Grid Grid.Row="0" Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Style="{StaticResource GlyphBadge}" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource GlyphBadgeIcon}" Text="&#xE72E;" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Style="{StaticResource TextTitle}" Text="API Key 管理器" />
+                            <TextBlock Style="{StaticResource TextCaption}" Margin="0,2,0,0"
+                                       Text="本地加密 · 离线存储 · AES-256-GCM" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- 右上：主题 / 修改主密码 / 锁定 -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <Button x:Name="BtnLock" Style="{StaticResource ButtonGhost}"
+                                Content="锁定" Margin="0,0,8,0" />
+                        <Button x:Name="BtnChangePassword" Style="{StaticResource ButtonGhost}"
+                                Content="修改主密码" Margin="0,0,8,0" />
+                        <Button x:Name="BtnTheme" Style="{StaticResource ButtonGhost}"
+                                Content="深色" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- 动作行：用 WrapPanel 让按钮在窄窗口下自动换行，避免被裁掉 -->
+                <WrapPanel Grid.Row="1" Orientation="Horizontal">
+                    <Button x:Name="BtnAdd" Style="{StaticResource ButtonPrimary}"
+                            Content="新增" Margin="0,0,8,6" />
+                    <Button x:Name="BtnEdit" Style="{StaticResource ButtonSubtle}"
+                            Content="编辑" Margin="0,0,8,6" />
+                    <Button x:Name="BtnDelete" Style="{StaticResource ButtonSubtle}"
+                            Content="删除" Margin="0,0,8,6" />
+
+                    <Rectangle Style="{StaticResource VerticalSep}" Height="20" Margin="2,0,10,6" />
+
+                    <Button x:Name="BtnCopyKey" Style="{StaticResource ButtonSubtle}"
+                            Content="复制 Key" Margin="0,0,8,6" />
+                    <Button x:Name="BtnCopyUrl" Style="{StaticResource ButtonSubtle}"
+                            Content="复制 URL" Margin="0,0,8,6" />
+                    <Button x:Name="BtnToggleKeys" Style="{StaticResource ButtonSubtle}"
+                            Content="显示密钥" Margin="0,0,8,6" />
+
+                    <Rectangle Style="{StaticResource VerticalSep}" Height="20" Margin="2,0,10,6" />
+
+                    <Button x:Name="BtnImport" Style="{StaticResource ButtonSubtle}"
+                            Content="导入" Margin="0,0,8,6" />
+                    <Button x:Name="BtnExportBackup" Style="{StaticResource ButtonSubtle}"
+                            Content="导出备份" Margin="0,0,8,6" />
+                    <Button x:Name="BtnExportCsv" Style="{StaticResource ButtonSubtle}"
+                            Content="导出 CSV" Margin="0,0,8,6" />
+
+                    <Rectangle Style="{StaticResource VerticalSep}" Height="20" Margin="2,0,10,6" />
+
+                    <!-- 搜索 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
+                        <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets"
+                                   Foreground="{DynamicResource TextDim}"
+                                   VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBox x:Name="TxtSearch" Style="{StaticResource TextBoxSearch}"
+                                 Width="190" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- 自动锁定 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6" VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource TextFieldLabel}" Margin="0,0,6,0"
+                                   Text="自动锁定（分钟，0=关）" />
+                        <TextBox x:Name="TxtAutoLock" Style="{StaticResource TextBoxBase}"
+                                 Width="{StaticResource WidthSpinner}" VerticalAlignment="Center"
+                                 TextAlignment="Center" Text="5" />
+                    </StackPanel>
+                </WrapPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============ 列表卡片 ============ -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" Padding="8">
+            <Grid>
+                <!--
+                  用 Grid 手动实现"固定表头 + 可滚动列表"：
+                  ListBox 的 ScrollViewer 会把表头一起滚走，所以分开。
+                -->
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- 表头 -->
+                <Border Grid.Row="0" Background="{DynamicResource Surface}"
+                        BorderBrush="{DynamicResource GridLine}"
+                        BorderThickness="0,0,0,1" Padding="12,0,26,0" Height="40">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*" MinWidth="120" />
+                            <ColumnDefinition Width="1.4*" MinWidth="90" />
+                            <ColumnDefinition Width="2.2*" MinWidth="160" />
+                            <ColumnDefinition Width="2*" MinWidth="140" />
+                            <ColumnDefinition Width="1.3*" MinWidth="90" />
+                            <ColumnDefinition Width="1.6*" MinWidth="120" />
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="130" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Style="{StaticResource TextCaption}" FontWeight="SemiBold" Text="名称" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Style="{StaticResource TextCaption}" FontWeight="SemiBold" Text="提供商" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Style="{StaticResource TextCaption}" FontWeight="SemiBold" Text="API Key" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="3" Style="{StaticResource TextCaption}" FontWeight="SemiBold" Text="Base URL" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="4" Style="{StaticResource TextCaption}" FontWeight="SemiBold" Text="模型" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="5" Style="{StaticResource TextCaption}" FontWeight="SemiBold" Text="标签" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="6" Style="{StaticResource TextCaption}" FontWeight="SemiBold" Text="到期日" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="7" Style="{StaticResource TextCaption}" FontWeight="SemiBold" Text="更新时间" VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+
+                <!-- 空状态 -->
+                <TextBlock x:Name="TxtEmpty" Grid.Row="1"
+                           Style="{StaticResource TextCaption}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Visibility="Collapsed"
+                           Text="还没有任何记录，点「新增」开始。" />
+
+                <!-- 列表本体（行模板定义在 MainWindow.Rows.xaml 的 DataTemplate 中） -->
+                <ListBox x:Name="EntryList" Grid.Row="1" Style="{StaticResource PlainListBox}" />
+            </Grid>
+        </Border>
+
+        <!-- ============ 状态栏 ============ -->
+        <Grid Grid.Row="2" Margin="0,8,0,0">
+            <TextBlock x:Name="TxtStatus" Style="{StaticResource TextCaption}"
+                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                       Text="就绪。" />
+            <Border x:Name="PillAutoLock" Style="{StaticResource Pill}"
+                    HorizontalAlignment="Right">
+                <TextBlock x:Name="TxtAutoLockPill" Style="{StaticResource PillLabel}"
+                           Text="自动锁定：已关闭" />
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

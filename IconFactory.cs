@@ -49,7 +49,7 @@ internal static class IconFactory
             g.Clear(Color.Transparent);
             float s = size / 256f;
 
-            using (var path = Theme.RoundRect(new RectangleF(0, 0, size - 1, size - 1), 56f * s))
+            using (var path = RoundRect(new RectangleF(0, 0, size - 1, size - 1), 56f * s))
             using (var lin = new LinearGradientBrush(new Point(0, 0), new Point(size, size),
                 Color.FromArgb(255, 80, 95, 232), Color.FromArgb(255, 124, 92, 240)))
             {
@@ -68,9 +68,30 @@ internal static class IconFactory
         return bmp;
     }
 
-    private static byte[] Png(Bitmap bmp)
+    /// <summary>
+    /// 圆角矩形路径。原先复用 WinForms 版 Theme.RoundRect，
+    /// 但那是 UI 层的静态方法，构建工具不应依赖它——这里自带一份，
+    /// 使 IconFactory 可以同时被 WinForms 与 WPF 工程编译。
+    /// </summary>
+    private static GraphicsPath RoundRect(RectangleF r, float radius)
     {
-        using var ms = new MemoryStream();
+        var path = new GraphicsPath();
+        float d = radius * 2f;
+        if (r.Width <= d || r.Height <= d)
+        {
+            path.AddRectangle(r);
+            return path;
+        }
+        path.AddArc(r.X, r.Y, d, d, 180, 90);
+        path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+        path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+        path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+        path.CloseFigure();
+        return path;
+    }
+
+    private static byte[] Png(Bitmap bmp)
+    {        using var ms = new MemoryStream();
         bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
         return ms.ToArray();
     }

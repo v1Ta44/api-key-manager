@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- 刻意使用 net9.0（非 net9.0-windows）：
+         这样编译器会拒绝任何 System.Windows / System.Windows.Forms 引用，
+         从架构上保证 Core 永远是纯逻辑、可被任意 UI 复用的。 -->
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ApiKeyManager</RootNamespace>
+    <AssemblyName>ApiKeyManager.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ApiKeyManager.Tests" />
+  </ItemGroup>
+
+</Project>
