@@ -69,10 +69,12 @@ public partial class App : Application
             return;
         }
 
-        // 数据目录重定向（--demo / --dir）必须在读取设置之前完成
+        // 数据目录重定向（--demo / --dir）必须在读取设置之前完成。
+        // --dir 优先：显式指定的目录应当胜出，否则自动化脚本无法把
+        // 演示数据写到自己看得见的地方（--demo 会盖掉 --dir）。
         var scopes = new List<IDisposable>();
         string? dir = Value("--dir");
-        if (Has("--demo")) dir = MakeDemoDir();
+        if (Has("--demo")) dir = MakeDemoDir(dir);
         if (dir != null) scopes.Add(DataPaths.UseDirectory(dir));
 
         if (Has("--dark")) ThemeManager.Apply(true);
@@ -110,9 +112,16 @@ public partial class App : Application
     /// 建一个临时数据目录并写入演示库。用于人工验收 UI，
     /// 绝不会碰到用户真实的 vault。目录路径会打印到控制台。
     /// </summary>
-    private static string MakeDemoDir()
+    /// <summary>
+    /// 造一个演示数据目录。
+    /// preferred 非空时使用它（来自 --dir），这样调用方知道数据落在哪里；
+    /// 否则在系统临时目录下新建一个随机目录。
+    /// </summary>
+    private static string MakeDemoDir(string? preferred = null)
     {
-        string dir = Path.Combine(Path.GetTempPath(), "akm-demo-" + Guid.NewGuid().ToString("N")[..8]);
+        string dir = string.IsNullOrWhiteSpace(preferred)
+            ? Path.Combine(Path.GetTempPath(), "akm-demo-" + Guid.NewGuid().ToString("N")[..8])
+            : preferred;
         Directory.CreateDirectory(dir);
 
         const string demoPassword = "demo";
