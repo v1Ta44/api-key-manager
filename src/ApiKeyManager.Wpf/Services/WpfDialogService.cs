@@ -21,8 +21,6 @@ public sealed class WpfDialogService : IDialogService
         _owner = owner;
     }
 
-    private Window Owner => _owner.IsLoaded ? _owner : _owner;
-
     // ---------------- 密码 ----------------
 
     public string? AskPassword(string title, string prompt, string? prefill = null) =>
@@ -50,19 +48,20 @@ public sealed class WpfDialogService : IDialogService
     }
 
     // ---------------- 消息框 ----------------
+    // 全部走主题化弹窗：MessageBox 用系统配色，不跟随浅色/深色主题，
+    // 在深色模式下会突兀地弹出一个亮色窗口。
 
     public void ShowInfo(string message, string title) =>
-        MessageBox.Show(_owner, message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+        MessageDialog.Show(_owner, MessageKind.Info, title, message);
 
     public void ShowWarning(string message, string title) =>
-        MessageBox.Show(_owner, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        MessageDialog.Show(_owner, MessageKind.Warning, title, message);
 
     public void ShowError(string message, string title) =>
-        MessageBox.Show(_owner, message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageDialog.Show(_owner, MessageKind.Error, title, message);
 
     public bool Confirm(string message, string title) =>
-        MessageBox.Show(_owner, message, title, MessageBoxButton.YesNo, MessageBoxImage.Warning)
-            == MessageBoxResult.Yes;
+        MessageDialog.Confirm(_owner, title, message, MessageKind.Warning);
 
     // ---------------- 文件对话框 ----------------
 
